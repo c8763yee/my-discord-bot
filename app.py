@@ -56,6 +56,7 @@ bot = Bot(
 @ commands.is_owner()
 async def load(ctx: commands.Context, extension: str):
     """Load extension.(owner only)"""
+
     await bot.load_extension(f"cogs.{extension}")
     await bot.tree.sync()
     await ctx.send(f"`{extension}` loaded")

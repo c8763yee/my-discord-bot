@@ -1,10 +1,11 @@
 import os
-
-from discord.ext import commands
-import discord
-from pydantic import BaseModel
 import typing
 from typing import Optional
+
+import discord
+from discord.ext import commands
+from pydantic import BaseModel
+
 from loggers import setup_package_logger
 
 
@@ -14,24 +15,32 @@ class Field(BaseModel):
     inline: bool = False
 
 
-__all__ = ('leetcode', )
-
-logger = setup_package_logger(f'{__name__}.__init__')
+__all__ = ('leetcode', 'pi')
 
 
-class Cog_Extension(commands.Cog):
+class CogsExtension(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.logger = setup_package_logger(
+            f'{self.__module__}')
 
     @commands.Cog.listener()
     async def on_ready(self):
-        logger.info(f'{self.__class__.__name__} is ready.')
+        self.logger.info(f'{self.__class__.__name__} is ready.')
 
-    async def create_embed(self,  title: str, description: str, thumbnail_url: Optional[str] = None,  color: Optional[int] = 0x000000,  *fields: Field):
+    async def create_embed(self,  title: str,  description: str,
+                           color: Optional[discord.Color] = discord.Color.red(),
+                           url: Optional[str] = None,
+                           thumbnail_url: Optional[str] = None,
+                           *fields: Field):
+        """
+        Create an embed message with given parameters.
+        """
         embed = discord.Embed(
             title=title,
             description=description,
-            color=color
+            color=color,
+            url=url
         )
 
         if thumbnail_url:
