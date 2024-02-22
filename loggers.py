@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d %(funcName)s - %(message)s"
+FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(funcName)s - %(message)s"
 
 
 class ColoredFormatter(logging.Formatter):
@@ -37,39 +37,17 @@ class ColoredFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-# def get_logger(name, file_level=logging.INFO, console_level=logging.DEBUG):
-#     module_name = os.path.splitext(os.path.basename(name))[0]
-#     log_path = f"{os.path.dirname(os.path.abspath(name))}/log/{module_name}"
-#     os.makedirs(log_path, exist_ok=True)
-
-#     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
-#     console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
-
-#     console_handler = logging.StreamHandler(sys.stdout)
-#     console_handler.setLevel(console_level)
-#     console_handler.setFormatter(console_formatter)
-
-#     file_handler = TimedRotatingFileHandler(
-#         filename=f"{log_path}/{module_name}.log",
-#         when="midnight",
-#         backupCount=7
-#     )
-#     file_handler.setLevel(file_level)
-#     file_handler.setFormatter(formatter)
-
-#     logging.basicConfig(level=logging.NOTSET, handlers=[
-#                         console_handler, file_handler])
-#     return logging.getLogger(module_name)
-
-
-def setup_package_logger(package_name, file_level=logging.INFO, console_level=logging.DEBUG):
+def setup_package_logger(package_name, file_level=logging.INFO, console_level=logging.DEBUG) -> logging.Logger:
     """_summary_
+
     Initialize the logger for the specified module.
+
     Args:
         module_name (str): The name of the package.
         file_level (int): The log level for the file handler.
         console_level (int): The log level for the console handler.
     """
+
     package_path_elements = package_name.split('.')
     log_directory_path = os.sep.join(package_path_elements[:-1])
     log_file_path = f'logs/{log_directory_path}'
@@ -84,10 +62,30 @@ def setup_package_logger(package_name, file_level=logging.INFO, console_level=lo
     console_handler.setFormatter(console_formatter)
 
     file_handler = logging.FileHandler(
-        filename=f"{log_file_path}/{logger_name}.log")
+        filename=f"{log_file_path}/{logger_name}.log".replace('//', '/'))
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
 
     logging.basicConfig(level=logging.NOTSET,
                         handlers=[console_handler, file_handler])
     return logging.getLogger(package_name)
+
+
+console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(console_formatter)
+if __name__ == '__main__':
+    logger = setup_package_logger('a.b.c', file_level=logging.DEBUG)
+    logger.debug('This is a debug message')
+    logger.info('This is an info message')
+    logger.warning('This is a warning message')
+    logger.error('This is an error message')
+    logger.critical('This is a critical message')
+    time.sleep(1)
+    print('Check the logs folder for the log files.')
+    time.sleep(1)
+    print('Press any key to exit.')
+    input()
+    sys.exit()

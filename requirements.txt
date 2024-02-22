@@ -3,3 +3,4 @@ aiofiles
 discord.py[voice]
 asyncio_atexit
 openai
+python-dotenv

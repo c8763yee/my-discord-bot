@@ -9,6 +9,7 @@ aiofiles = "*"
 asyncio-atexit = "*"
 openai = "*"
 "discord.py" = {extras = ["voice"], version = "*"}
+python-dotenv = "*"
 
 [dev-packages]
 

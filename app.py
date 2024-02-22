@@ -1,45 +1,91 @@
 import logging
 import logging.handlers
 import os
-from dotenv import load_dotenv
+import sys
+import traceback
+from textwrap import dedent
+
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
+
+from loggers import setup_package_logger
+
+load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
 
 
 class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = setup_package_logger(__name__)
+
     async def on_ready(self):
-        print(f'Logged in as {self.user} (ID: {self.user.id})')
+        import cogs
+        for modules in cogs.__all__:
+            await self.load_extension(f'cogs.{modules}')
 
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
-            return
-        await ctx.send(error)
+        await self.tree.sync()
+        self.logger.info(f'{self.user} is ready.')
+        await self.change_presence(activity=discord.Game(name='never gonna give you up'))
+
+    async def on_command_error(self, ctx: commands.Context, error):
+        match error:
+            case commands.CommandNotFound():
+                self.logger.error(f'Command {ctx.message.content} not found.')
+                await ctx.send(f'Command {ctx.message.content} not found.')
+            case commands.MissingRequiredArgument():
+                self.logger.error(f'Missing required argument: {error.param}')
+                await ctx.send(f'Missing required argument: {error.param}')
+            case _:
+                self.logger.exception(
+                    f'Ignoring exception in command {ctx.command}:')
+                traceback.print_exception(
+                    type(error), error, error.__traceback__, file=sys.stderr)
 
 
-bot = Bot(command_prefix='!')
+# ---------------------------- Initialising the bot ---------------------------- #
+bot = Bot(
+    command_prefix=commands.when_mentioned_or('!', '?', 'hey siri, '),
+    intents=discord.Intents.all(),
+    help_command=commands.DefaultHelpCommand(dm_help=False),
+    description='A bot for my Discord server.',
+)
 
 
-def setup_logger():
-    logger = logging.getLogger('discord')
-    logger.setLevel(logging.DEBUG)
-    logging.getLogger('discord.http').setLevel(logging.INFO)
+@ bot.hybrid_command()
+@ commands.is_owner()
+async def load(ctx: commands.Context, extension: str):
+    """Load extension.(owner only)"""
+    await bot.load_extension(f"cogs.{extension}")
+    await bot.tree.sync()
+    await ctx.send(f"`{extension}` loaded")
 
-    handler = logging.handlers.RotatingFileHandler(
-        filename='discord.log',
-        encoding='utf-8',
-        maxBytes=32 * 1024 * 1024,  # 32 MiB
-        backupCount=5,  # Rotate through 5 files
-    )
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    formatter = logging.Formatter(
-        '[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
+@ bot.hybrid_command()
+@ commands.is_owner()
+async def unload(ctx: commands.Context, extension: str):
+    """Unload extension.(owner only)"""
+    await bot.unload_extension(f"cogs.{extension}")
+    await bot.tree.sync()
+    await ctx.send(f"`{extension}` unloaded")
+
+
+@ bot.hybrid_command()
+@ commands.is_owner()
+async def reload(ctx: commands.Context, extension: str):
+    """Reload extension.(owner only)"""
+    # if new commands are added into cogs, sync the tree
+    await bot.reload_extension(f"cogs.{extension}")
+    await bot.tree.sync()
+    await ctx.send(f"`{extension}` reloaded")
+
+# ---------------------------- Running the bot ---------------------------- #
 
 if __name__ == '__main__':
-    load_dotenv()
-    setup_logger()
     assert os.getenv(
-        'DISCORD_TOKEN') is not None, 'DISCORD_TOKEN not found in .env'
-    bot.run(os.getenv('DISCORD_TOKEN'))
+        'DISCORD_BOT_TOKEN', None) is not None, dedent('''
+    DISCORD_BOT_TOKEN not found in .env, please add it in env/bot.env
+    or if you are first time using this bot, please rename envExample to env and fill in the details.
+    ''')
+    logging.getLogger('discord.http').setLevel(logging.INFO)
+    bot.run(os.environ['DISCORD_BOT_TOKEN'], log_handler=None)
