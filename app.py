@@ -26,6 +26,7 @@ class Bot(commands.Bot):
 
         await self.tree.sync()
         self.logger.info(f'{self.user} is ready.')
+        await self.get_channel(int(os.environ['TEST_CHANNEL_ID'])).send(f'{self.user} is ready.')
         await self.change_presence(activity=discord.Game(name='never gonna give you up'))
 
     async def on_command_error(self, ctx: commands.Context, error):
