@@ -98,8 +98,8 @@ class LeetCodeUtils(CogsExtension):
         thumbnail = matched_userprofile['userAvatar']
         description = matched_userprofile['aboutMe']
         # items
-        rating_info = response['userContestRankingInfo'].get(
-            'userContestRanking', {})
+        rating_info = response.get('userContestRankingInfo', {}).get(
+            'userContestRanking', dict())
         solved_problems = response['userProblemsSolved']['matchedUser']['submitStatsGlobal']['acSubmissionNum']
         language_count = response['languageStats']['matchedUser']['languageProblemCount']
 
