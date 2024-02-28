@@ -27,6 +27,7 @@ jobs:
           LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
           MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
           OWNER_ID: ${{ secrets.OWNER_ID }}
-          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }}
+          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }} 
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           
         run: docker compose up -d

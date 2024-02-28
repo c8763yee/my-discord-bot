@@ -14,12 +14,7 @@ from loggers import setup_package_logger
 if os.path.exists('env/bot.env'):
     load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
 
-
-@tasks.loop(minutes=1)
-async def update_time():
-    now = datetime.now() + timedelta(hours=8)
-    await bot.change_presence(activity=discord.CustomActivity(name=f'現在時間： {now.strftime("%Y-%m-%d %H:%M")}', emoji=discord.PartialEmoji(name="🕒"))
-                              )
+logger = setup_package_logger(__name__)
 
 
 class Bot(commands.Bot):
@@ -29,13 +24,14 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         import cogs
+        update_time.start()
+        for cog in cogs.__all__:
+            await self.load_extension(f"cogs.{cog}")
+            await self.get_channel(int(os.environ["TEST_CHANNEL_ID"])).send(
+                f"`{cog}` loaded"
+            )
 
-        for modules in cogs.__all__:
-            await self.load_extension(f"cogs.{modules}")
-
-        await update_time.start()
         await self.tree.sync()
-
         self.logger.info(f"{self.user} is ready.")
         await self.get_channel(int(os.environ["TEST_CHANNEL_ID"])).send(
             f"{self.user} is ready."
@@ -66,6 +62,13 @@ bot = Bot(
     description="A bot for my Discord server.",
 )
 logging.getLogger("discord.http").setLevel(logging.INFO)
+
+
+@tasks.loop(minutes=1)
+async def update_time():
+    now = datetime.now() + timedelta(hours=8)
+    await bot.change_presence(activity=discord.CustomActivity(name=f'現在時間： {now.strftime("%Y-%m-%d %H:%M")}',
+                                                              emoji=discord.PartialEmoji(name="🕒")))
 
 
 @bot.hybrid_command()
