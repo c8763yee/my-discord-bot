@@ -6,17 +6,11 @@ from discord.ext import commands
 from loggers import setup_package_logger
 
 from .tasks import KasaTasks
-from .utils import KasaUtils
 
 logger = setup_package_logger(__name__)
 
 
 class KasaCMD(KasaTasks):
-    # variables
-    def __init__(self, bot):
-        super().__init__(bot)
-        self.utils = KasaUtils(bot)
-
     # methods(commands)
     @commands.hybrid_group(ephermal=True)
     async def kasa(self, ctx: commands.Context):

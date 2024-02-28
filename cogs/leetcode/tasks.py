@@ -22,7 +22,7 @@ class LeetCodeTasks(CogsExtension):
         self.fetch_leetcode_daily_challenge.start()
 
     def cog_unload(self):
-        self.fetch_leetcode_daily_challenge.cancel()
+        self.fetch_leetcode_daily_challenge.stop()
 
     # methods(tasks)
 

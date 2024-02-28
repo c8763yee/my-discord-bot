@@ -1,6 +1,4 @@
-import os
-import typing
-from typing import Optional
+from typing import Optional, Any
 
 import discord
 from discord.ext import commands
@@ -8,21 +6,19 @@ from pydantic import BaseModel
 
 from loggers import setup_package_logger
 
+__all__ = ('leetcode', 'pi', 'kasa', 'gpt')
+
 
 class Field(BaseModel):
     name: str
-    value: typing.Any
+    value: Any
     inline: bool = False
-
-
-__all__ = ('leetcode', 'pi', 'kasa')
 
 
 class CogsExtension(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.logger = setup_package_logger(
-            f'{self.__module__}')
+        self.logger = setup_package_logger(f'{self.__module__}')
 
     @commands.Cog.listener()
     async def on_ready(self):
