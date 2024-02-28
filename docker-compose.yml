@@ -17,5 +17,5 @@ services:
       - TEST_CHANNEL_ID=${TEST_CHANNEL_ID}
       - LEETCODE_CSRFTOKEN=${LEETCODE_CSRFTOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MQTT_BROKER=${MQTT_BROKER}
     restart: on-failure:10
-    user: "1000:1000"
