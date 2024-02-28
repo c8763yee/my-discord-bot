@@ -12,4 +12,8 @@ services:
       - /dev/vcio
     environment:
       - LD_LIBRARY_PATH=/usr/lib
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - OWNER_ID=${OWNER_ID}
+      - TEST_CHANNEL_ID=${TEST_CHANNEL_ID}
+      - LEETCODE_CSRFTOKEN=${LEETCODE_CSRFTOKEN}
     restart: on-failure:10

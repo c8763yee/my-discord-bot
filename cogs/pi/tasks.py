@@ -1,5 +1,6 @@
-import os
 import datetime
+import os
+
 from discord.ext import tasks
 
 from cogs import CogsExtension
@@ -16,7 +17,12 @@ class RaspberryPiTasks(CogsExtension):
     def __init__(self, bot):
         super().__init__(bot)
         self.utils = RaspberryPiUtils(bot)
+
+    def cog_load(self):
         self.get_temperature.start()
+
+    def cog_unload(self):
+        self.get_temperature.stop()
 
     @tasks.loop(time=per_clock)
     async def get_temperature(self):

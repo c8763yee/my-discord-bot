@@ -20,7 +20,7 @@ class KasaTasks(CogsExtension):
         self.power_report.start()
 
     def cog_unload(self):
-        self.power_report.cancel()
+        self.power_report.stop()
 
     # methods(tasks)
 

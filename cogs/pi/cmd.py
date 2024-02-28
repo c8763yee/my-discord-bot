@@ -1,10 +1,7 @@
 import os
-import subprocess
 
-import discord
 from discord.ext import commands
 
-from cogs import CogsExtension
 from loggers import setup_package_logger
 
 from .tasks import RaspberryPiTasks
