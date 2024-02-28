@@ -16,6 +16,4 @@ services:
       - OWNER_ID=${OWNER_ID}
       - TEST_CHANNEL_ID=${TEST_CHANNEL_ID}
       - LEETCODE_CSRFTOKEN=${LEETCODE_CSRFTOKEN}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     restart: on-failure:10
-    user: "1000:1000"
