@@ -21,5 +21,12 @@ jobs:
           context: .
 
 
-      - name: Deploy to Docker
+      - name: Deploy to Docker with secret
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
+          MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
+          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }}
+          
         run: docker compose up -d
