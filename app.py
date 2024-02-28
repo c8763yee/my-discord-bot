@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from loggers import setup_package_logger
 
-load_dotenv(dotenv_path="env/bot.env", verbose=True)
+load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
 
 
 class Bot(commands.Bot):
