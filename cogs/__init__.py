@@ -15,7 +15,7 @@ class Field(BaseModel):
     inline: bool = False
 
 
-__all__ = ('leetcode', 'pi')
+__all__ = ('leetcode', 'pi', 'kasa')
 
 
 class CogsExtension(commands.Cog):

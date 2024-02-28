@@ -1,11 +1,11 @@
+import discord
 from discord.ext import commands
 
-from cogs import CogsExtension
-
+from .tasks import LeetCodeTasks
 from .utils import LeetCodeUtils
 
 
-class LeetCodeCMD(CogsExtension):
+class LeetCodeCMD(LeetCodeTasks):
     # variables
     def __init__(self, bot):
         super().__init__(bot)

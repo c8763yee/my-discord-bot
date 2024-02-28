@@ -1,17 +1,19 @@
 import os
 import subprocess
 
+import discord
 from discord.ext import commands
 
 from cogs import CogsExtension
 from loggers import setup_package_logger
 
+from .tasks import RaspberryPiTasks
 from .utils import RaspberryPiUtils
 
 logger = setup_package_logger(__name__)
 
 
-class RaspberryPiCMD(CogsExtension):
+class RaspberryPiCMD(RaspberryPiTasks):
     def __init__(self, bot):
         super().__init__(bot)
         self.utils = RaspberryPiUtils(bot)
