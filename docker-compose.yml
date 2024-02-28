@@ -5,8 +5,6 @@ services:
       dockerfile: Dockerfile
     image: bot
     container_name: bot
-    env_file:
-      - ./env/docker.env
     volumes:
       - ./logs:/app/logs
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
