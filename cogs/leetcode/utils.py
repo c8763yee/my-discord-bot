@@ -8,19 +8,18 @@ import discord
 from aiohttp import ClientSession
 
 from cogs import CogsExtension, Field
-from .const import LEETCODE_USER_QUERY
 from loggers import setup_package_logger
 
-from .const import API_URL, THUMBNAIL_URL
+from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
 
 logger = setup_package_logger(__name__)
 
 
-with open('secret.json', 'r') as f:
+with open("secret.json", "r") as f:
     script = json.load(f)
-    headers = script['headers']
-    cookies = script['cookies']
-    cookies['csrftoken'] = os.environ['LEETCODE_CSRFTOKEN']
+    headers = script["headers"]
+    cookies = script["cookies"]
+    cookies["csrftoken"] = os.environ["LEETCODE_CSRFTOKEN"]
 
 
 class LeetCodeUtils(CogsExtension):
@@ -34,10 +33,12 @@ class LeetCodeUtils(CogsExtension):
         request_body = {
             "operationName": operation,
             "variables": variables,
-            "query": LEETCODE_USER_QUERY
+            "query": LEETCODE_USER_QUERY,
         }
         async with ClientSession() as session:
-            async with session.post(API_URL, json=request_body, headers=headers, cookies=cookies) as resp:
+            async with session.post(
+                API_URL, json=request_body, headers=headers, cookies=cookies
+            ) as resp:
                 data = await resp.json()
 
         return data
@@ -53,10 +54,10 @@ class LeetCodeUtils(CogsExtension):
         response = {}
         for operation in operation_name:
             operation_response = await self.send_request(
-                operation,
-                username=username, year=now.year, month=now.month, limit=1)
+                operation, username=username, year=now.year, month=now.month, limit=1
+            )
 
-            response[operation] = operation_response['data']
+            response[operation] = operation_response["data"]
 
         return await self.format_user_info(response, username)
 
@@ -65,7 +66,7 @@ class LeetCodeUtils(CogsExtension):
         including title, difficulty, tags, link, etc.
         """
 
-        data = (await self.send_request("questionOfToday"))['data']
+        data = (await self.send_request("questionOfToday"))["data"]
 
         question = data["activeDailyCodingChallengeQuestion"]["question"]
         ID = question["frontendQuestionId"]
@@ -73,7 +74,9 @@ class LeetCodeUtils(CogsExtension):
         difficulty = question["difficulty"]
         color = self.difficulty_color[difficulty]
 
-        link = f"https://leetcode.com{data['activeDailyCodingChallengeQuestion']['link']}"
+        link = (
+            f"https://leetcode.com{data['activeDailyCodingChallengeQuestion']['link']}"
+        )
 
         topic = ", ".join(map(lambda tag: tag["name"], question["topicTags"]))
         ac_rate = f'{question["acRate"]:.2f}%'
@@ -84,54 +87,64 @@ class LeetCodeUtils(CogsExtension):
             color,
             link,
             THUMBNAIL_URL,
-            Field(name='Question Link', value=link, inline=False),
-            Field(name='Difficulty', value=difficulty, inline=True),
-            Field(name='Topic', value=topic, inline=True),
-            Field(name='Acceptance Rate', value=ac_rate, inline=True)
+            Field(name="Question Link", value=link, inline=False),
+            Field(name="Difficulty", value=difficulty, inline=True),
+            Field(name="Topic", value=topic, inline=True),
+            Field(name="Acceptance Rate", value=ac_rate, inline=True),
         )
         return embed
 
     async def format_user_info(self, response: dict, username: str) -> discord.Embed:
-        matched_user = response['userPublicProfile']['matchedUser']
-        matched_userprofile = matched_user['profile']
+        matched_user = response["userPublicProfile"]["matchedUser"]
+        matched_userprofile = matched_user["profile"]
 
-        thumbnail = matched_userprofile['userAvatar']
-        description = matched_userprofile['aboutMe']
+        thumbnail = matched_userprofile["userAvatar"]
+        description = matched_userprofile["aboutMe"]
         # items
-        rating_info = response.get('userContestRankingInfo', dict()).get(
-            'userContestRanking', dict())
-        solved_problems = response['userProblemsSolved']['matchedUser']['submitStatsGlobal']['acSubmissionNum']
-        language_count = response['languageStats']['matchedUser']['languageProblemCount']
+        rating_info = response.get("userContestRankingInfo", dict()).get(
+            "userContestRanking", dict()
+        )
+        solved_problems = response["userProblemsSolved"]["matchedUser"][
+            "submitStatsGlobal"
+        ]["acSubmissionNum"]
+        language_count = response["languageStats"]["matchedUser"][
+            "languageProblemCount"
+        ]
 
         # data processing
-        language_count.sort(key=lambda x: x['problemsSolved'], reverse=True)
+        language_count.sort(key=lambda x: x["problemsSolved"], reverse=True)
 
         # Fields
         # ------------------------------------------------
-        recent_AC_list = response['recentAcSubmissions']['recentAcSubmissionList']
+        recent_AC_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
         recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com{recent_AC_list[0]["titleSlug"]})'
         # ------------------------------------------------
-        rating = dedent(f"""
+        rating = dedent(
+            f"""
             attempts: {rating_info.get('attendedContestsCount', 'N/A')}
             Rank: {rating_info.get('globalRanking', 'N/A')}/{rating_info.get('totalParticipants', 'N/A')}
             Rating: {rating_info.get('rating', 'N/A')}
             Top %: {rating_info.get('topPercentage', 0):.2f}%
-            """)
+            """
+        )
 
-        solved_count = '\n'.join([
-            f"{item['difficulty']}: {item['count']}" for item in solved_problems
-        ])
-        languages = '\n'.join([
-            f"{item['languageName']}: {item['problemsSolved']}" for item in language_count
-        ])
+        solved_count = "\n".join(
+            [f"{item['difficulty']}: {item['count']}" for item in solved_problems]
+        )
+        languages = "\n".join(
+            [
+                f"{item['languageName']}: {item['problemsSolved']}"
+                for item in language_count
+            ]
+        )
         return await self.create_embed(
-            matched_userprofile['realName'],
+            matched_userprofile["realName"],
             description,
             discord.Color.blurple(),
-            f'https://leetcode.com/{username}',
+            f"https://leetcode.com/{username}",
             thumbnail,
-            Field(name='Recent AC', value=recent_AC, inline=False),
-            Field(name='Rating', value=rating, inline=True),
-            Field(name='Solved Count', value=solved_count, inline=True),
-            Field(name='Languages', value=languages, inline=False),
+            Field(name="Recent AC", value=recent_AC, inline=False),
+            Field(name="Rating", value=rating, inline=True),
+            Field(name="Solved Count", value=solved_count, inline=True),
+            Field(name="Languages", value=languages, inline=False),
         )

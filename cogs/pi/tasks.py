@@ -9,8 +9,7 @@ from .utils import RaspberryPiUtils
 
 logger = setup_package_logger(__name__)
 
-
-per_O_clock = datetime.time(minute=0, second=0)
+per_clock = [datetime.time(hour=h, minute=0, second=0) for h in range(24)]
 
 
 class RaspberryPiTasks(CogsExtension):
@@ -19,7 +18,7 @@ class RaspberryPiTasks(CogsExtension):
         self.utils = RaspberryPiUtils(bot)
         self.get_temperature.start()
 
-    @tasks.loop(time=per_O_clock)
+    @tasks.loop(time=per_clock)
     async def get_temperature(self):
         channel = self.bot.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
         message = await self.utils.get_temperature()
