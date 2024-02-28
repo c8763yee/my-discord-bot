@@ -20,6 +20,7 @@ query globalData {
   }
 }
 
+
 query siteAnnouncements {
   siteAnnouncements {
     title
@@ -29,6 +30,7 @@ query siteAnnouncements {
     navbarItem
   }
 }
+
 
 query userPublicProfile($username: String!) {
   matchedUser(username: $username) {
@@ -65,6 +67,8 @@ query userPublicProfile($username: String!) {
   }
 }
 
+
+
 query languageStats($username: String!) {
   matchedUser(username: $username) {
     languageProblemCount {
@@ -73,6 +77,8 @@ query languageStats($username: String!) {
     }
   }
 }
+
+
 
 query skillStats($username: String!) {
   matchedUser(username: $username) {
@@ -95,6 +101,8 @@ query skillStats($username: String!) {
     }
   }
 }
+
+
 
 query userContestRankingInfo($username: String!) {
   userContestRanking(username: $username) {
@@ -123,6 +131,7 @@ query userContestRankingInfo($username: String!) {
 }
 
 
+
 query userProblemsSolved($username: String!) {
   allQuestionsCount {
     difficulty
@@ -141,6 +150,8 @@ query userProblemsSolved($username: String!) {
     }
   }
 }
+
+
 
 query userBadges($username: String!) {
   matchedUser(username: $username) {
@@ -170,6 +181,7 @@ query userBadges($username: String!) {
 }
 
 
+
 query userProfileCalendar($username: String!, $year: Int) {
   matchedUser(username: $username) {
     userCalendar(year: $year) {
@@ -189,6 +201,7 @@ query userProfileCalendar($username: String!, $year: Int) {
 }
 
 
+
 query recentAcSubmissions($username: String!, $limit: Int!) {
   recentAcSubmissionList(username: $username, limit: $limit) {
     id
@@ -199,6 +212,7 @@ query recentAcSubmissions($username: String!, $limit: Int!) {
 }
 
 
+
 query getStreakCounter {
   streakCounter {
     streakCount
@@ -207,9 +221,11 @@ query getStreakCounter {
   }
 }
 
+
 query currentTimestamp {
   currentTimestamp
 }
+
 
 query questionOfToday {
   activeDailyCodingChallengeQuestion {
@@ -237,6 +253,7 @@ query questionOfToday {
   }
 }
 
+
 query codingChallengeMedal($year: Int!, $month: Int!) {
   dailyChallengeMedal(year: $year, month: $month) {
     name
@@ -247,6 +264,7 @@ query codingChallengeMedal($year: Int!, $month: Int!) {
 }
 
 
+
 query getUserProfile($username: String!) {
   matchedUser(username: $username) {
     activeBadge {
@@ -255,5 +273,6 @@ query getUserProfile($username: String!) {
     }
   }
 }
+
 
 

@@ -29,11 +29,11 @@ class LeetCodeUtils(CogsExtension):
         "Hard": discord.Color.red(),
     }
 
-    async def send_request(self, operation: str, **variables) -> dict:
+    async def send_request_to_leetcode_API(self, operation: str, query: str = LEETCODE_USER_QUERY, **variables) -> dict:
         request_body = {
             "operationName": operation,
             "variables": variables,
-            "query": LEETCODE_USER_QUERY,
+            "query": query,
         }
         async with ClientSession() as session:
             async with session.post(
@@ -53,7 +53,7 @@ class LeetCodeUtils(CogsExtension):
         now = datetime.datetime.now()
         response = {}
         for operation in operation_name:
-            operation_response = await self.send_request(
+            operation_response = await self.send_request_to_leetcode_API(
                 operation, username=username, year=now.year, month=now.month, limit=1
             )
 
@@ -66,7 +66,7 @@ class LeetCodeUtils(CogsExtension):
         including title, difficulty, tags, link, etc.
         """
 
-        data = (await self.send_request("questionOfToday"))["data"]
+        data = (await self.send_request_to_leetcode_API("questionOfToday"))["data"]
 
         question = data["activeDailyCodingChallengeQuestion"]["question"]
         ID = question["frontendQuestionId"]

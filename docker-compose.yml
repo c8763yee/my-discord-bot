@@ -6,7 +6,7 @@ services:
     image: bot
     container_name: bot
     volumes:
-      - ./logs:/app/logs:rw
+      - ./logs:/app/logs:rwz
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
     devices:
       - /dev/vcio
