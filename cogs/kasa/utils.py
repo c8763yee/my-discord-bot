@@ -36,14 +36,14 @@ class KasaUtils(CogsExtension):
             "Power Usage Report",
             f"Power usage of the plug: {payload['name']}(ID: {plug_id})",
             discord.Color.green(
-            ) if payload["is_on"] else discord.Color.blurple(),
+            ) if payload["is_on"] else discord.Color.from_rgb(0, 0, 0),
             None,
             None,
             Field(name="Total Energy(kWh)",
                   value=payload["total_wh"], inline=False),
-            Field(name="Voltage(V)", value=payload["V"]),
-            Field(name="Current(A)", value=payload["A"]),
-            Field(name="Power(W)", value=payload["W"]),
+            Field(name="Voltage(V)", value=payload["V"], inline=True),
+            Field(name="Current(A)", value=payload["A"], inline=True),
+            Field(name="Power(W)", value=payload["W"], inline=True),
         )
         return embed
 

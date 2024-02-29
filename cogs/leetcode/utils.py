@@ -19,7 +19,7 @@ with open("secret.json", "r") as f:
     script = json.load(f)
     headers = script["headers"]
     cookies = script["cookies"]
-    cookies["csrftoken"] = os.environ["LEETCODE_CSRFTOKEN"]
+    cookies["csrftoken"] = os.getenv("LEETCODE_CSRFTOKEN", None)
 
 
 class LeetCodeUtils(CogsExtension):
@@ -103,7 +103,7 @@ class LeetCodeUtils(CogsExtension):
         # items
         rating_info = response.get("userContestRankingInfo", dict()).get(
             "userContestRanking", dict()
-        )
+        ) or dict()
         solved_problems = response["userProblemsSolved"]["matchedUser"][
             "submitStatsGlobal"
         ]["acSubmissionNum"]

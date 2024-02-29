@@ -5,6 +5,7 @@ import sys
 import time
 
 FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(funcName)s - %(message)s"
+logging.basicConfig(level=logging.NOTSET)
 
 
 class ColoredFormatter(logging.Formatter):
@@ -65,10 +66,11 @@ def setup_package_logger(package_name, file_level=logging.INFO, console_level=lo
         filename=f"{log_file_path}/{logger_name}.log".replace('//', '/'))
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
+    logger = logging.getLogger(package_name)
 
-    logging.basicConfig(level=logging.NOTSET,
-                        handlers=[console_handler, file_handler])
-    return logging.getLogger(package_name)
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 
 console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)

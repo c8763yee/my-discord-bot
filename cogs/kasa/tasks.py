@@ -26,7 +26,7 @@ class KasaTasks(CogsExtension):
 
     @tasks.loop(time=per_clock)
     async def power_report(self):
-        channel = self.bot.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
+        channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
         for plug_id in range(6+1):
             embed = await self.utils.get_power_usage(plug_id)
             await channel.send(embed=embed)
