@@ -26,6 +26,6 @@ class RaspberryPiTasks(CogsExtension):
 
     @tasks.loop(time=per_clock)
     async def get_temperature(self):
-        channel = self.bot.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
+        channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
         message = await self.utils.get_temperature()
         await channel.send(message)

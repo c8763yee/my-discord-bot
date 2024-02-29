@@ -28,6 +28,6 @@ class LeetCodeTasks(CogsExtension):
 
     @tasks.loop(time=daily_challenge_time)
     async def fetch_leetcode_daily_challenge(self):
-        channel = self.bot.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
+        channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
         embed = await self.utils.fetch_leetcode_daily_challenge()
         await channel.send(embed=embed)

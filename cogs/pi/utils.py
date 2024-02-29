@@ -20,7 +20,7 @@ class RaspberryPiUtils(CogsExtension):
 
         if temperature > 80:
             logger.warning(f"Temperature Too High: {temperature} °C, Rebooting")
-            self.bot.get_channel(int(os.environ["TEST_CHANNEL_ID"])).send(
+            self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None))).send(
                 f"Temperature Too High: {temperature} °C, Rebooting"
             )
             os.system("sudo reboot")
