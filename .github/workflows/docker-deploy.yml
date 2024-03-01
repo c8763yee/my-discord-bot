@@ -30,4 +30,4 @@ jobs:
           TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }} 
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           
-        run: docker compose up -d
+        run: docker compose -f docker-compose-ci.yml up -d

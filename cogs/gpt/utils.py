@@ -6,7 +6,8 @@ import openai
 from openai.types import CompletionUsage, Image
 from openai.types.chat import ChatCompletion
 
-from cogs import CogsExtension, Field
+from cogs import CogsExtension
+from core.models import Field
 from loggers import setup_package_logger
 
 from . import const

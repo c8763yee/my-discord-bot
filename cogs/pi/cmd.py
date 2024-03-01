@@ -16,10 +16,10 @@ class RaspberryPiCMD(RaspberryPiTasks):
         self.utils = RaspberryPiUtils(bot)
 
     @commands.hybrid_group(ephermal=True)
-    @commands.is_owner()
     async def pi(self, ctx: commands.Context):
         pass
 
+    @commands.is_owner()
     @pi.command("reboot")
     async def reboot(self, ctx: commands.Context):
         await ctx.send("Rebooting")

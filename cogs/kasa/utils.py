@@ -2,14 +2,15 @@ import datetime
 import json
 import os
 import re
-from textwrap import dedent
 from typing import Optional
 
 import discord
 from aiomqtt import Client
 from dotenv import load_dotenv
 
-from cogs import CogsExtension, Field
+from cogs import CogsExtension
+from core.models import Field
+
 from loggers import setup_package_logger
 
 

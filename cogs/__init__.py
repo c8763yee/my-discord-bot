@@ -1,18 +1,12 @@
-from typing import Optional, Any
+from typing import Optional
 
 import discord
 from discord.ext import commands
-from pydantic import BaseModel
 
+from core.models import Field
 from loggers import setup_package_logger
 
-__all__ = ('leetcode', 'pi', 'kasa', 'gpt')
-
-
-class Field(BaseModel):
-    name: str
-    value: Any
-    inline: bool = False
+__all__ = ('leetcode', 'pi', 'kasa', 'gpt', 'arcaea')
 
 
 class CogsExtension(commands.Cog):

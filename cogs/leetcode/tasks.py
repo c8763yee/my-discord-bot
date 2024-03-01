@@ -29,5 +29,7 @@ class LeetCodeTasks(CogsExtension):
     @tasks.loop(time=daily_challenge_time)
     async def fetch_leetcode_daily_challenge(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        embed = await self.utils.fetch_leetcode_daily_challenge()
-        await channel.send(embed=embed)
+        embed, title = await self.utils.fetch_leetcode_daily_challenge()
+        owner_id = os.getenv('OWNER_ID', None)
+        await channel.send(f'<@{owner_id}>\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}',
+                           embed=embed)
