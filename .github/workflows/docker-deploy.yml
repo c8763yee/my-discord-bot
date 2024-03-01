@@ -24,10 +24,10 @@ jobs:
       - name: Deploy to Docker with secret
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
-          MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
           OWNER_ID: ${{ secrets.OWNER_ID }}
-          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }} 
+          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }}
+          LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
           
         run: docker compose -f docker-compose-ci.yml up -d
