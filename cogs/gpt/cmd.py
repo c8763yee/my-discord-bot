@@ -9,7 +9,6 @@ logger = setup_package_logger(__name__)
 
 class ChatGPTCMD(ChatGPTTasks):
     @commands.hybrid_group(ephermal=True)
-    @commands.is_owner()
     async def chatgpt(self, ctx: commands.Context):
         pass
 

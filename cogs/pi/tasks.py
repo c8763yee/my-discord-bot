@@ -10,7 +10,7 @@ from .utils import RaspberryPiUtils
 
 logger = setup_package_logger(__name__)
 
-per_clock = [datetime.time(hour=h, minute=0, second=0) for h in range(24)]
+per_clock = [datetime.time(hour=h, minute=0, second=0) for h in range(6, 24)]
 
 
 class RaspberryPiTasks(CogsExtension):

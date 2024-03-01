@@ -7,7 +7,8 @@ from textwrap import dedent
 import discord
 from aiohttp import ClientSession
 
-from cogs import CogsExtension, Field
+from cogs import CogsExtension
+from core.models import Field
 from loggers import setup_package_logger
 
 from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
@@ -61,7 +62,7 @@ class LeetCodeUtils(CogsExtension):
 
         return await self.format_user_info(response, username)
 
-    async def fetch_leetcode_daily_challenge(self) -> discord.Embed:
+    async def fetch_leetcode_daily_challenge(self) -> tuple[discord.Embed, str]:
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
@@ -92,7 +93,7 @@ class LeetCodeUtils(CogsExtension):
             Field(name="Topic", value=topic, inline=True),
             Field(name="Acceptance Rate", value=ac_rate, inline=True),
         )
-        return embed
+        return embed, title
 
     async def format_user_info(self, response: dict, username: str) -> discord.Embed:
         matched_user = response["userPublicProfile"]["matchedUser"]

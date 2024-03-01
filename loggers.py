@@ -44,16 +44,15 @@ def setup_package_logger(package_name, file_level=logging.INFO, console_level=lo
     Initialize the logger for the specified module.
 
     Args:
-        module_name (str): The name of the package.
+        package_name (str): The name of the package.
         file_level (int): The log level for the file handler.
         console_level (int): The log level for the console handler.
     """
 
     package_path_elements = package_name.split('.')
     log_directory_path = os.sep.join(package_path_elements[:-1])
-    log_file_path = f'logs/{log_directory_path}'
     logger_name = package_path_elements[-1]
-    os.makedirs(log_file_path, exist_ok=True)
+    os.makedirs(f'logs/{log_directory_path}', exist_ok=True)
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
     console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
@@ -63,7 +62,7 @@ def setup_package_logger(package_name, file_level=logging.INFO, console_level=lo
     console_handler.setFormatter(console_formatter)
 
     file_handler = logging.FileHandler(
-        filename=f"{log_file_path}/{logger_name}.log".replace('//', '/'))
+        filename=f"logs/{log_directory_path}/{logger_name}.log".replace('//', '/'))
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
     logger = logging.getLogger(package_name)

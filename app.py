@@ -35,10 +35,11 @@ class Bot(commands.Bot):
 
         await update_time.start()
         await self.tree.sync()
-
-        self.logger.info(f"{self.user} is ready.")
-        await self.get_channel(int(os.environ["TEST_CHANNEL_ID"])).send(
-            f"{self.user} is ready."
+        # mention owner when ready
+        self.logger.info(f"{self.user} is ready")
+        channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
+        await channel.send(
+            f"{self.user} is ready. <@{os.environ['OWNER_ID']}>"
         )
 
     async def on_command_error(self, ctx: commands.Context, error):

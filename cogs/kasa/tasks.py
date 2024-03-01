@@ -1,13 +1,12 @@
 import datetime
 import os
 
-from discord.ext import tasks
+from discord.ext import tasks, commands
 
 from cogs import CogsExtension
-
 from .utils import KasaUtils
 
-per_clock = [datetime.time(hour=h, minute=0, second=0) for h in range(24)]
+per_clock = [datetime.time(hour=h, minute=0, second=0) for h in range(6, 24)]
 
 
 class KasaTasks(CogsExtension):
@@ -27,6 +26,8 @@ class KasaTasks(CogsExtension):
     @tasks.loop(time=per_clock)
     async def power_report(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        for plug_id in range(6+1):
-            embed = await self.utils.get_power_usage(plug_id)
-            await channel.send(embed=embed)
+        # mention bot owner
+        await channel.send(f"<@{os.environ['OWNER_ID']}> Power usage report")
+        embeds = [await self.utils.get_power_usage(x) for x in range(6+1)]
+
+        await channel.send(embeds=embeds)
