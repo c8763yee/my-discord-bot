@@ -13,6 +13,7 @@ from loggers import setup_package_logger
 
 if os.path.exists('env/bot.env'):
     load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
+os.umask(0o000)
 
 
 @tasks.loop(minutes=1)
