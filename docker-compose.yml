@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: bot
+    image: test_bot
     container_name: test_bot
     volumes:
       - ./logs:/app/logs:rw
