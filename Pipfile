@@ -8,8 +8,9 @@ aiohttp = "*"
 aiofiles = "*"
 asyncio-atexit = "*"
 openai = "*"
-"discord.py" = {extras = ["voice"], version = "*"}
 python-dotenv = "*"
+aiomqtt = "*"
+"discord.py" = {extras = ["voice"], version = "*"}
 
 [dev-packages]
 

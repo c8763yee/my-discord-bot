@@ -19,7 +19,8 @@ class RaspberryPiUtils(CogsExtension):
         message = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]: ")
 
         if temperature > 80:
-            logger.warning(f"Temperature Too High: {temperature} °C, Rebooting")
+            self.logger.warning(
+                f"Temperature Too High: {temperature} °C, Rebooting")
             self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None))).send(
                 f"Temperature Too High: {temperature} °C, Rebooting"
             )
@@ -28,9 +29,9 @@ class RaspberryPiUtils(CogsExtension):
             message += (
                 f"Temperature High: {temperature} °C, Consider Rebooting or Cooling"
             )
-            logger.warning(message)
+            self.logger.warning(message)
         else:
             message += f"Temperature: {temperature} °C"
-            logger.info(message)
+            self.logger.info(message)
 
         return message

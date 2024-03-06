@@ -5,7 +5,7 @@ import re
 from textwrap import dedent
 
 import discord
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ContentTypeError
 
 from cogs import CogsExtension
 from core.models import Field
@@ -22,15 +22,18 @@ with open("secret.json", "r") as f:
     cookies = script["cookies"]
     cookies["csrftoken"] = os.getenv("LEETCODE_CSRFTOKEN", None)
 
+difficulty_color = {
+    "Easy": discord.Color.green(),
+    "Medium": discord.Color.gold(),
+    "Hard": discord.Color.red(),
+}
+
 
 class LeetCodeUtils(CogsExtension):
-    difficulty_color = {
-        "Easy": discord.Color.green(),
-        "Medium": discord.Color.gold(),
-        "Hard": discord.Color.red(),
-    }
 
-    async def send_request_to_leetcode_API(self, operation: str, query: str = LEETCODE_USER_QUERY, **variables) -> dict:
+    async def send_request_to_leetcode_API(
+        self, operation: str, query: str = LEETCODE_USER_QUERY, **variables
+    ) -> dict:
         request_body = {
             "operationName": operation,
             "variables": variables,
@@ -40,11 +43,14 @@ class LeetCodeUtils(CogsExtension):
             async with session.post(
                 API_URL, json=request_body, headers=headers, cookies=cookies
             ) as resp:
-                data = await resp.json()
+                try:
+                    response = await resp.json()
+                except ContentTypeError as e:
+                    logger.error(f"Error occurred: {e}")
+                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {await resp.text()}")
+        return response
 
-        return data
-
-    async def fetch_leetcode_user_info(self, username: str) -> discord.Embed:
+    async def fetch_leetcode_user_info(self, username: str) -> dict:
         operation_name = [
             re.match(r"^\s*query\s+([a-zA-Z]+)\s*\((.*)\)\s*{", line).group(1)
             for line in LEETCODE_USER_QUERY.split("\n")
@@ -60,41 +66,16 @@ class LeetCodeUtils(CogsExtension):
 
             response[operation] = operation_response["data"]
 
-        return await self.format_user_info(response, username)
+        return response
 
-    async def fetch_leetcode_daily_challenge(self) -> tuple[discord.Embed, str]:
+    async def fetch_leetcode_daily_challenge(self) -> dict:
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
+        return (await self.send_request_to_leetcode_API("questionOfToday"))["data"]
 
-        data = (await self.send_request_to_leetcode_API("questionOfToday"))["data"]
 
-        question = data["activeDailyCodingChallengeQuestion"]["question"]
-        ID = question["frontendQuestionId"]
-        title = f'{ID}. {question["title"]}'
-        difficulty = question["difficulty"]
-        color = self.difficulty_color[difficulty]
-
-        link = (
-            f"https://leetcode.com{data['activeDailyCodingChallengeQuestion']['link']}"
-        )
-
-        topic = ", ".join(map(lambda tag: tag["name"], question["topicTags"]))
-        ac_rate = f'{question["acRate"]:.2f}%'
-
-        embed = await self.create_embed(
-            title,
-            "Today's Leetcode Daily Challenge",
-            color,
-            link,
-            THUMBNAIL_URL,
-            Field(name="Question Link", value=link, inline=False),
-            Field(name="Difficulty", value=difficulty, inline=True),
-            Field(name="Topic", value=topic, inline=True),
-            Field(name="Acceptance Rate", value=ac_rate, inline=True),
-        )
-        return embed, title
-
+class LeetCodeResponseFormatter(CogsExtension):
     async def format_user_info(self, response: dict, username: str) -> discord.Embed:
         matched_user = response["userPublicProfile"]["matchedUser"]
         matched_userprofile = matched_user["profile"]
@@ -102,9 +83,12 @@ class LeetCodeUtils(CogsExtension):
         thumbnail = matched_userprofile["userAvatar"]
         description = matched_userprofile["aboutMe"]
         # items
-        rating_info = response.get("userContestRankingInfo", dict()).get(
-            "userContestRanking", dict()
-        ) or dict()
+        rating_info = (
+            response.get("userContestRankingInfo", dict()).get(
+                "userContestRanking", dict()
+            )
+            or dict()
+        )
         solved_problems = response["userProblemsSolved"]["matchedUser"][
             "submitStatsGlobal"
         ]["acSubmissionNum"]
@@ -118,7 +102,7 @@ class LeetCodeUtils(CogsExtension):
         # Fields
         # ------------------------------------------------
         recent_AC_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
-        recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com{recent_AC_list[0]["titleSlug"]})'
+        recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com/{recent_AC_list[0]["titleSlug"]})'
         # ------------------------------------------------
         rating = dedent(
             f"""
@@ -143,9 +127,36 @@ class LeetCodeUtils(CogsExtension):
             description,
             discord.Color.blurple(),
             f"https://leetcode.com/{username}",
-            thumbnail,
             Field(name="Recent AC", value=recent_AC, inline=False),
             Field(name="Rating", value=rating, inline=True),
             Field(name="Solved Count", value=solved_count, inline=True),
             Field(name="Languages", value=languages, inline=False),
+            thumbnail_url=thumbnail,
         )
+
+    async def format_daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
+        question = response["activeDailyCodingChallengeQuestion"]["question"]
+        ID = question["frontendQuestionId"]
+        title = f'{ID}. {question["title"]}'
+        difficulty = question["difficulty"]
+        color = difficulty_color[difficulty]
+
+        link = (
+            f"https://leetcode.com{response['activeDailyCodingChallengeQuestion']['link']}"
+        )
+
+        topic = ", ".join(map(lambda tag: tag["name"], question["topicTags"]))
+        ac_rate = f'{question["acRate"]:.2f}%'
+
+        embed = await self.create_embed(
+            title,
+            "Today's Leetcode Daily Challenge",
+            color,
+            link,
+            Field(name="Question Link", value=f"[link]({link})", inline=False),
+            Field(name="Difficulty", value=difficulty, inline=True),
+            Field(name="Topic", value=topic, inline=True),
+            Field(name="Acceptance Rate", value=ac_rate, inline=True),
+            thumbnail_url=THUMBNAIL_URL,
+        )
+        return embed, title

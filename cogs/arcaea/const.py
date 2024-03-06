@@ -7,3 +7,10 @@ EX_RATING_DELTA = 1
 
 EX_SCORE_DELTA = 200000
 BELOW_EX_SCORE_DELTA = 300000
+
+DIFFICULTY_ABBR = ["PST", "PRS", "FTR", "BYD"]
+DIFFICULTY_NAMES = ["Past", "Present", "Future", "Beyond"]
+DIFFICULTY_COLOR = ["#5CBAD3", "#B5C76F", "#913A79", "#BF0D25"]
+
+GRADE_NAMES = ["D", "C", "B", "A", "AA", "EX", "EX+"]
+GRADE_URL_SUFFIX = ['d', 'c', 'b', 'a', 'aa', 'ex', 'explus']

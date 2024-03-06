@@ -14,14 +14,15 @@ class LeetCodeCMD(LeetCodeTasks):
     @leetcode.command("user")
     async def user(self, ctx: commands.Context, username: str):
         await ctx.interaction.response.defer()
-        embed = await self.utils.fetch_leetcode_user_info(username)
+        user_info = await self.utils.fetch_leetcode_user_info(username)
+        embed = await self.formatter.format_user_info(user_info, username)
         await ctx.interaction.followup.send(embed=embed)
 
     @leetcode.command("daily")
     async def daily(self, ctx: commands.Context):
         await ctx.interaction.response.defer()
-
-        embed, title = await self.utils.fetch_leetcode_daily_challenge()
+        response = await self.utils.fetch_leetcode_daily_challenge()
+        embed, title = await self.formatter.format_daily_challenge(response)
         owner_id = os.getenv('OWNER_ID', None)
         await ctx.interaction.followup.send(f'<@{owner_id}>\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}',
                                             embed=embed)

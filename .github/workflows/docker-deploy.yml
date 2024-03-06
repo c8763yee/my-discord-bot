@@ -25,5 +25,6 @@ jobs:
           LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
-          
+          ARCAEA_EMAIL: ${{ secrets.ARCAEA_EMAIL }}
+          ARCAEA_PASSWORD: ${{ secrets.ARCAEA_PASSWORD }}
         run: docker compose -f docker-compose-ci.yml up -d
