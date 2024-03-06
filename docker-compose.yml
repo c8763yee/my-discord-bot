@@ -7,9 +7,4 @@ services:
     container_name: test_bot
     volumes:
       - ./logs:/app/logs:rw
-      - /usr/bin:/usr/bin # Mount the /usr/bin directory
-    devices:
-      - /dev/vcio
-    environment:
-      - LD_LIBRARY_PATH=/usr/lib
     restart: on-failure:10

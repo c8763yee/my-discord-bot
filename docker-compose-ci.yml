@@ -5,10 +5,13 @@ services:
       dockerfile: Dockerfile
     image: bot
     container_name: bot
+    networks:
+      - bot
     volumes:
       - ./logs:/app/logs:rw
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
     devices:
+      # Mount the /dev/vcio device for the Raspberry Pi
       - /dev/vcio
     environment:
       - LD_LIBRARY_PATH=/usr/lib
@@ -18,4 +21,10 @@ services:
       - LEETCODE_CSRFTOKEN=${LEETCODE_CSRFTOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - MQTT_BROKER=${MQTT_BROKER}
+      - ARCAEA_EMAIL=${ARCAEA_EMAIL}
+      - ARCAEA_PASSWORD=${ARCAEA_PASSWORD}
     restart: on-failure:10
+
+networks:
+  bot:
+    driver: bridge
