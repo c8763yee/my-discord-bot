@@ -12,8 +12,6 @@ from loggers import setup_package_logger
 
 from . import const
 
-logger = setup_package_logger(__name__)
-
 
 class ChatGPT:
     """
@@ -29,6 +27,7 @@ class ChatGPT:
     }
 
     client = openai.AsyncOpenAI()
+    logger = setup_package_logger(__name__)
 
     def __init__(self):
         self._history = [self.behavior]
@@ -38,7 +37,7 @@ class ChatGPT:
         response = await cls.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        logger.info(f"Moderation result: {result}")
+        cls.logger.info(f"Moderation result: {result}")
         return (result.flagged or
                 any(cate is True
                     for cate in result.categories.model_dump().values())
@@ -86,10 +85,10 @@ class ChatGPTUtils(CogsExtension):
             'In this response, the usage information of the ChatGPT API is included.',
             discord.Color.blurple(),
             'https://chat.openai.com/docs/usage',
-            'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg',
             Field(name='completion_tokens', value=usage.completion_tokens),
             Field(name='prompt_tokens', value=usage.prompt_tokens),
             Field(name='total_tokens', value=usage.total_tokens),
+            thumbnail_url='https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg',
         )
 
         return answer, usage_embed

@@ -39,7 +39,6 @@ class KasaUtils(CogsExtension):
             discord.Color.green(
             ) if payload["is_on"] else discord.Color.from_rgb(0, 0, 0),
             None,
-            None,
             Field(name="Total Energy(kWh)",
                   value=payload["total_wh"], inline=False),
             Field(name="Voltage(V)", value=payload["V"], inline=True),

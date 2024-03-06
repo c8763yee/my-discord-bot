@@ -12,17 +12,13 @@ __all__ = ('leetcode', 'pi', 'kasa', 'gpt', 'arcaea')
 class CogsExtension(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.logger = setup_package_logger(f'{self.__module__}')
+        self.logger = setup_package_logger(__name__)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        self.logger.info(f'{self.__class__.__name__} is ready.')
-
-    async def create_embed(self,  title: str,  description: str,
+    @classmethod
+    async def create_embed(cls,  title: str,  description: str,
                            color: Optional[discord.Color] = discord.Color.red(),
                            url: Optional[str] = None,
-                           thumbnail_url: Optional[str] = None,
-                           *fields: Field):
+                           *fields: Field, **kwargs):
         """
         Create an embed message with given parameters.
         """
@@ -33,9 +29,10 @@ class CogsExtension(commands.Cog):
             url=url
         )
 
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
-
+        if 'thumbnail_url' in kwargs:
+            embed.set_thumbnail(url=kwargs['thumbnail_url'])
+        if 'image_url' in kwargs:
+            embed.set_image(url=kwargs['image_url'])
         for field in fields:
             embed.add_field(name=field.name, value=field.value,
                             inline=field.inline)

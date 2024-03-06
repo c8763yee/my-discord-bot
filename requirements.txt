@@ -5,3 +5,5 @@ asyncio_atexit
 openai
 python-dotenv
 aiomqtt
+requests
+packaging

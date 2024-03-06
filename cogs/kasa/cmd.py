@@ -14,7 +14,7 @@ class KasaCMD(KasaTasks):
     # methods(commands)
     @commands.hybrid_group(ephermal=True)
     async def kasa(self, ctx: commands.Context):
-        logger.debug("kasa command invoked.")
+        pass
 
     @kasa.command("emeter")
     async def kasa_emeter(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6]):
