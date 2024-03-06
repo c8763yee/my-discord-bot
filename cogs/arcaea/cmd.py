@@ -1,22 +1,23 @@
 from discord import Color
 import json
+import os
 
 from discord.ext import commands
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from datetime import datetime
 from cogs import CogsExtension
 from core.models import Field
 from .utils import APIUtils, AssetFetcher
 from .const import DIFFICULTY_ABBR, DIFFICULTY_NAMES, DIFFICULTY_COLOR, GRADE_NAMES, GRADE_URL_SUFFIX
-secret = dotenv_values('env/arcaea.env')
-
+if os.path.exists("env/arcaea.env"):
+    load_dotenv("env/arcaea.env", override=True)
 
 class ArcaeaCMD(CogsExtension):
 
     def __init__(self, bot, *args, **kwargs):
         super().__init__(bot, *args, **kwargs)
         self.utils = APIUtils(
-            email=secret['ARCAEA_EMAIL'], password=secret['ARCAEA_PASSWORD'], *args, **kwargs)
+            email=os.environ['ARCAEA_EMAIL'], password=os.environ['ARCAEA_PASSWORD'], *args, **kwargs)
 
     async def cog_load(self):
         await self.utils.login()
