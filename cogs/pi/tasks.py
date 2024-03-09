@@ -6,7 +6,7 @@ from discord.ext import tasks
 from cogs import CogsExtension
 from loggers import setup_package_logger
 
-from .utils import RaspberryPiUtils
+from .utils import RaspberryPiUtils, StatsFormatter
 
 logger = setup_package_logger(__name__)
 
@@ -27,13 +27,14 @@ class RaspberryPiTasks(CogsExtension):
         self.utils = RaspberryPiUtils(bot)
 
     def cog_load(self):
-        self.get_temperature.start()
+        self.get_stats.start()
 
     def cog_unload(self):
-        self.get_temperature.stop()
+        self.get_stats.stop()
 
     @tasks.loop(time=per_clock)
-    async def get_temperature(self):
+    async def get_stats(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        message = await self.utils.get_temperature()
-        await channel.send(message)
+        message = await self.utils.get_stats()
+        embed = await StatsFormatter.format_stats(message)
+        await channel.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed)

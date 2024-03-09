@@ -9,7 +9,7 @@ from aiohttp import ClientSession, ContentTypeError
 
 from cogs import CogsExtension
 from core.models import Field
-from loggers import setup_package_logger
+from loggers import setup_package_logger, TZ
 
 from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
 
@@ -47,7 +47,7 @@ class LeetCodeUtils(CogsExtension):
                     response = await resp.json()
                 except ContentTypeError as e:
                     logger.error(f"Error occurred: {e}")
-                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {await resp.text()}")
+                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {(await resp.text())[:50]}")
         return response
 
     async def fetch_leetcode_user_info(self, username: str) -> dict:
@@ -57,7 +57,7 @@ class LeetCodeUtils(CogsExtension):
             if re.match(r"^\s*query\s+([a-zA-Z]+)\s*\((.*)\)\s*{", line) is not None
         ]
 
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(tz=TZ)
         response = {}
         for operation in operation_name:
             operation_response = await self.send_request_to_leetcode_API(

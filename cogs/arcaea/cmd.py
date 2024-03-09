@@ -12,6 +12,7 @@ from .const import DIFFICULTY_ABBR, DIFFICULTY_NAMES, DIFFICULTY_COLOR, GRADE_NA
 if os.path.exists("env/arcaea.env"):
     load_dotenv("env/arcaea.env", override=True)
 
+
 class ArcaeaCMD(CogsExtension):
 
     def __init__(self, bot, *args, **kwargs):
@@ -60,14 +61,15 @@ class ArcaeaCMD(CogsExtension):
             None,
             Field(name="Played at", value=datetime.fromtimestamp(
                 result['time_played'] // 1000).strftime('%Y-%m-%d %H:%M:%S'), inline=False),
+            Field(name="Rating", value=round(
+                result['play_rating'], 2), inline=True),
+            Field(name="Score", value=result['score'], inline=False),
             Field(name="Grade", value=GRADE_NAMES[grade], inline=True),
             Field(name="Difficulty",
                   value=DIFFICULTY_NAMES[difficulty], inline=True),
             Field(name="Chart Constant",
                   value=round(result['rating'], 1), inline=True),
-            Field(name="Rating", value=round(
-                result['play_rating'], 2), inline=True),
-            Field(name="Score", value=result['score'], inline=True),
+
             thumbnail_url=f'https://moyoez.github.io/ArcaeaResource-ActionUpdater/arcaea/assets/img/grade/{GRADE_URL_SUFFIX[grade]}.png',
             image_url=song_cover
         )

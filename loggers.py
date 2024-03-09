@@ -3,9 +3,10 @@ import logging
 import os
 import sys
 import time
-
+import datetime
 FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(funcName)s - %(message)s"
 logging.basicConfig(level=logging.NOTSET, handlers=None)
+TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 
 class ColoredFormatter(logging.Formatter):

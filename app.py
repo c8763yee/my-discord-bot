@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 from textwrap import dedent
 
 import discord
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from cogs import CogsExtension
 from cogs.arcaea.utils import APIUtils
 from core.models import Field
-from loggers import setup_package_logger
+from loggers import setup_package_logger, TZ
 
 if os.path.exists('env/bot.env'):
     load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
@@ -22,7 +22,7 @@ logger = setup_package_logger('main', file_level=logging.INFO)
 
 @tasks.loop(minutes=1)
 async def update_time():
-    now = datetime.now() + timedelta(hours=8)
+    now = datetime.now(tz=TZ)
     await bot.change_presence(
         activity=discord.CustomActivity(
             name=f'現在時間： {now.strftime("%Y-%m-%d %H:%M")}',
@@ -34,7 +34,8 @@ async def update_time():
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = setup_package_logger(__name__, file_level=logging.INFO)
+        self.logger: logging.Logger = setup_package_logger(
+            __name__, file_level=logging.INFO)
 
     async def on_ready(self):
         import cogs
