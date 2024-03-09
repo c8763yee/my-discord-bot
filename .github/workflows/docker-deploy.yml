@@ -27,4 +27,8 @@ jobs:
           MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
           ARCAEA_EMAIL: ${{ secrets.ARCAEA_EMAIL }}
           ARCAEA_PASSWORD: ${{ secrets.ARCAEA_PASSWORD }}
-        run: docker compose -f docker-compose-ci.yml up -d
+        run: docker compose -f docker-compose-ci.yml up -d  
+        
+      - name: Clean up
+        run: docker system prune -f
+        

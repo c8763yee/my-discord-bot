@@ -7,4 +7,3 @@ services:
     container_name: test_bot
     volumes:
       - ./logs:/app/logs:rw
-    restart: on-failure:10

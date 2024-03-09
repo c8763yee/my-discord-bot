@@ -203,7 +203,7 @@ class APIUtils(ScoreUtils):
             raise Exception(
                 f'Unknown error!,{resp}')
 
-    async def fetch_all(self, user_code: str) -> dict:
+    async def fetch_all(self, user_code: str) -> tuple[dict, str]:
         user_id, user_name = await self.get_user_id(user_code)
 
         tasks = [await self.fetch_play_info(song, user_id) for song in self._songlist]
@@ -226,7 +226,7 @@ class APIUtils(ScoreUtils):
                 'time_played': play_data.get('time_played', 'N/A')
             }
 
-        return result
+        return result, user_name
 
     async def fetch_recent(self, target_user_code: str) -> dict:
         target_user_id, username = await self.get_user_id(target_user_code)
@@ -245,8 +245,7 @@ class APIUtils(ScoreUtils):
 
 class AssetFetcher:
     base_url = 'https://moyoez.github.io/ArcaeaResource-ActionUpdater/arcaea/assets'
-    songlist = get(
-        'https://moyoez.github.io/ArcaeaResource-ActionUpdater/arcaea/assets/songs/songlist')
+    songlist = get(f'{base_url}/songs/songlist')
     songlist_map = {song['id']: song for song in songlist.json()['songs']}
 
     @classmethod

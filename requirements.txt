@@ -1,9 +1,8 @@
-aiohttp
 aiofiles
-discord.py[voice]
-asyncio_atexit
-openai
-python-dotenv
+aiohttp
 aiomqtt
+discord.py[voice]
+openai
+psutil
+python-dotenv
 requests
-packaging
