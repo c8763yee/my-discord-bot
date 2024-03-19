@@ -4,7 +4,7 @@ import os
 from discord.ext import tasks
 
 from cogs import CogsExtension
-from .utils import KasaUtils
+from .utils import KasaUtils, KasaResponseFormatter
 
 daily_report_time = datetime.time(
     hour=10,
@@ -31,6 +31,6 @@ class KasaTasks(CogsExtension):
     @tasks.loop(time=daily_report_time)
     async def power_report(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        embeds = [await self.utils.get_power_usage(x) for x in range(6 + 1)]
-
+        payloads = await self.utils.get_power_usage_multiple(range(6+1))
+        embeds = await KasaResponseFormatter.format_power_usage_multiple(payloads)
         await channel.send(f"<@{os.environ['OWNER_ID']}> Daily power usage report", embeds=embeds)
