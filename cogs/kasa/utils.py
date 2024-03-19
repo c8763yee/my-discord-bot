@@ -29,7 +29,7 @@ class KasaUtils(CogsExtension):
                 f"hs300/emeter{('/%d' % plug_id) if plug_id != 0 else ''}"
             )
             async for message in client.messages:  # we only need the 1st message
-                payload = json.loads(message.payload)
+                payload = {**json.loads(message.payload), 'id': plug_id}
                 break
 
         return payload
