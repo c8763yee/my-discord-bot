@@ -6,6 +6,7 @@ from discord.ext import commands
 from loggers import setup_package_logger
 
 from .tasks import KasaTasks
+from .utils import KasaResponseFormatter
 
 logger = setup_package_logger(__name__)
 
@@ -18,7 +19,9 @@ class KasaCMD(KasaTasks):
 
     @kasa.command("emeter")
     async def kasa_emeter(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6]):
-        embed = await self.utils.get_power_usage(plug_id)
+        await ctx.interaction.response.defer()
+        payload = await self.utils.get_power_usage(plug_id)
+        embed = await KasaResponseFormatter.format_power_usage(payload)
         await ctx.send(f'Power usage of plug {plug_id}', embed=embed)
 
     @kasa.command("emeters")
@@ -27,7 +30,8 @@ class KasaCMD(KasaTasks):
         if plug_ids is None:
             plug_ids = range(6+1)  # default to all plugs
 
-        embeds = [await self.utils.get_power_usage(plug_id) for plug_id in plug_ids]
+        payloads = await self.utils.get_power_usage_multiple(plug_ids)
+        embeds = await KasaResponseFormatter.format_power_usage_multiple(payloads)
         await ctx.interaction.followup.send(f"Power usage of plugs ({', '.join(map(str, plug_ids))})", embeds=embeds)
 
     @commands.is_owner()
