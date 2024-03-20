@@ -43,13 +43,14 @@ class Bot(commands.Bot):
 
         for modules in cogs.__all__:
             await self.load_extension(f"cogs.{modules}")
-            await channel.send(f"`{modules}` loaded")
+            await channel.send(f"`{modules}` loaded", silent=True)
 
         update_time.start()
         await self.tree.sync()
         # mention owner when ready
         await channel.send(
-            f"{self.user} is ready. <@{os.environ['OWNER_ID']}>"
+            f"{self.user} is ready. <@{os.environ['OWNER_ID']}>",
+            silent=True,
         )
 
     async def on_command_error(self, ctx: commands.Context, error):
@@ -85,7 +86,7 @@ class Bot(commands.Bot):
             ```
             Error Type: `{error_type}`
             """), inline=False),
-        ))
+        ), ephemeral=True)
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
@@ -106,7 +107,7 @@ async def load(ctx: commands.Context, extension: str):
     await ctx.interaction.response.defer()
     await bot.load_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` loaded")
+    await ctx.interaction.followup.send(f"`{extension}` loaded", ephemeral=True)
 
 
 @bot.hybrid_command()
@@ -116,7 +117,7 @@ async def unload(ctx: commands.Context, extension: str):
     await ctx.interaction.response.defer()
     await bot.unload_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` unloaded")
+    await ctx.interaction.followup.send(f"`{extension}` unloaded", ephemeral=True)
 
 
 @bot.hybrid_command()
@@ -127,7 +128,7 @@ async def reload(ctx: commands.Context, extension: str):
     await ctx.interaction.response.defer()
     await bot.reload_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` reloaded")
+    await ctx.interaction.followup.send(f"`{extension}` reloaded", ephemeral=True)
 
 
 # ---------------------------- Running the bot ---------------------------- #

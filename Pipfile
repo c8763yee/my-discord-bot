@@ -11,6 +11,8 @@ openai = "*"
 python-dotenv = "*"
 aiomqtt = "*"
 "discord.py" = {extras = ["voice"], version = "*"}
+psutil = "*"
+requests = "*"
 
 [dev-packages]
 
