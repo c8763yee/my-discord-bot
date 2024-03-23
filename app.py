@@ -73,20 +73,18 @@ class Bot(commands.Bot):
         error_type = error.__class__.__name__
         error_message = str(error)
         self.logger.exception(error)
-        await ctx.send(embed=await CogsExtension.create_embed(
-            "Error occurred",
-            f"\n{error_type} occurred at line {error_line}, character {error_char}\n",
-            discord.Color.red(),
-            None,
-            Field(name="Error info", value=dedent(f"""
-            Position: `{error_line}:{error_char}`
-            Error message: 
-            ```py
-            {error_message}
-            ```
-            Error Type: `{error_type}`
-            """), inline=False),
-        ), ephemeral=True)
+        await ctx.send(
+            embed=await CogsExtension.create_embed(
+                "Error occurred",
+                f"\n{error_type}",
+                discord.Color.red(),
+                None,
+                Field(
+                    name="Error info",
+                    value=dedent(f"""
+                        Error Type: `{error_type}`
+                        """), inline=False)),
+            file=discord.File(fp=error_file, filename="error.txt"))
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
