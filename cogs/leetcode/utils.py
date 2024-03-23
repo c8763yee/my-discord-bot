@@ -3,27 +3,24 @@ import json
 import os
 import re
 from textwrap import dedent
-from typing import Optional
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
 
 from cogs import CogsExtension
 from core.models import Field
-from loggers import TZ, setup_package_logger
-from dotenv import load_dotenv
+from loggers import setup_package_logger, TZ
+
 from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
 
 logger = setup_package_logger(__name__)
 
-if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
+
 with open("secret.json", "r") as f:
     script = json.load(f)
     headers = script["headers"]
     cookies = script["cookies"]
     cookies["csrftoken"] = os.getenv("LEETCODE_CSRFTOKEN", None)
-    headers["x-csrftoken"] = cookies["csrftoken"]
 
 difficulty_color = {
     "Easy": discord.Color.green(),
@@ -34,7 +31,7 @@ difficulty_color = {
 
 class LeetCodeUtils(CogsExtension):
 
-    async def _send_request_to_leetcode_API(
+    async def send_request_to_leetcode_API(
         self, operation: str, query: str = LEETCODE_USER_QUERY, **variables
     ) -> dict:
         request_body = {
@@ -50,7 +47,7 @@ class LeetCodeUtils(CogsExtension):
                     response = await resp.json()
                 except ContentTypeError as e:
                     logger.error(f"Error occurred: {e}")
-                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {(await resp.text())}")
+                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {(await resp.text())[:50]}")
         return response
 
     async def fetch_leetcode_user_info(self, username: str) -> dict:
@@ -63,7 +60,7 @@ class LeetCodeUtils(CogsExtension):
         now = datetime.datetime.now(tz=TZ)
         response = {}
         for operation in operation_name:
-            operation_response = await self._send_request_to_leetcode_API(
+            operation_response = await self.send_request_to_leetcode_API(
                 operation, username=username, year=now.year, month=now.month, limit=1
             )
 
@@ -75,16 +72,11 @@ class LeetCodeUtils(CogsExtension):
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        return (await self._send_request_to_leetcode_API("questionOfToday"))["data"]
-
-    async def fetch_leetcode_contest(self) -> list[dict]:
-        with open('queries/feed.graphql', 'r') as f:
-            LEETCODE_CONTEST_QUERY = f.read()
-        return (await self._send_request_to_leetcode_API("upcomingContests", query=LEETCODE_CONTEST_QUERY))["data"]["upcomingContests"]
+        return (await self.send_request_to_leetcode_API("questionOfToday"))["data"]
 
 
 class LeetCodeResponseFormatter(CogsExtension):
-    async def user_info(self, response: dict, username: str) -> discord.Embed:
+    async def format_user_info(self, response: dict, username: str) -> discord.Embed:
         matched_user = response["userPublicProfile"]["matchedUser"]
         matched_userprofile = matched_user["profile"]
 
@@ -142,7 +134,7 @@ class LeetCodeResponseFormatter(CogsExtension):
             thumbnail_url=thumbnail,
         )
 
-    async def daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
+    async def format_daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
         question = response["activeDailyCodingChallengeQuestion"]["question"]
         ID = question["frontendQuestionId"]
         title = f'{ID}. {question["title"]}'
@@ -168,37 +160,3 @@ class LeetCodeResponseFormatter(CogsExtension):
             thumbnail_url=THUMBNAIL_URL,
         )
         return embed, title
-
-    async def contest(self, response: dict, only_today: bool = False) -> tuple[bool, Optional[discord.Embed]]:
-
-        if only_today and await self.today_is_contest(response) is False:
-            return False, None
-
-        start_time = datetime.datetime.fromtimestamp(
-            response["startTime"], tz=TZ)
-        title = description = response["title"]
-        link = f'https://leetcode.com/contest/{response["titleSlug"]}/'
-
-        embed = await self.create_embed(
-            title,
-            description,
-            discord.Color.blurple(),
-            link,
-            Field(name="Start Time", value=start_time.strftime(
-                "%Y-%m-%d %H:%M:%S"), inline=False),
-            thumbnail_url=THUMBNAIL_URL,
-        )
-        return True, embed
-
-    async def contests(self, response: list[dict], only_today: bool = False) -> tuple[bool, list[discord.Embed]]:
-        embeds = []
-        for contest in response:
-            is_success, embed = await self.contest(contest, only_today)
-            if is_success:
-                embeds.append(embed)
-        return embeds != [], embeds
-
-    async def today_is_contest(self, contest: dict) -> bool:
-        start_time = datetime.datetime.fromtimestamp(
-            contest["startTime"], tz=TZ)
-        return start_time.date() == datetime.datetime.now(tz=TZ).date()

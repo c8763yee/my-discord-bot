@@ -68,9 +68,9 @@ class RaspberryPiUtils(CogsExtension):
         return message
 
 
-class RaspberryFormatter:
+class StatsFormatter:
     @staticmethod
-    async def stats(stats: dict) -> Embed:
+    async def format_stats(stats: dict) -> Embed:
         embed = await CogsExtension.create_embed(
             "Raspberry Pi Statistics",
             f'Current Time: {stats["now"]}',
