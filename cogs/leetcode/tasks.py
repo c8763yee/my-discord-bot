@@ -60,7 +60,7 @@ class LeetCodeTasks(CogsExtension):
     @tasks.loop(time=daily_challenge_time)
     async def fetch_leetcode_contest(self):
         response = await self.utils.fetch_leetcode_contest()
-        is_success, embeds = await self.formatter.contests(response)
+        is_success, embeds = await self.formatter.contests(response, only_today=True)
         if is_success is False:
             return
 

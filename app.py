@@ -1,7 +1,6 @@
 import logging
 import os
-import sys
-import traceback
+from io import StringIO
 from datetime import datetime
 from textwrap import dedent
 
@@ -63,6 +62,8 @@ class Bot(commands.Bot):
         """
         error_type = error.__class__.__name__
         error_message = str(error)
+        error_file = StringIO(error_message)
+
         self.logger.exception(error)
         await ctx.send(embed=await CogsExtension.create_embed(
             "Error occurred",
@@ -70,13 +71,14 @@ class Bot(commands.Bot):
             discord.Color.red(),
             None,
             Field(name="Error info", value=dedent(f"""
-            Error message: 
-            ```py
-            {error_message}
-            ```
             Error Type: `{error_type}`
+<<<<<<< Updated upstream
             """), inline=False),
         ), ephemeral=True)
+=======
+            """), inline=False)),
+            file=discord.File(fp=error_file, filename="error.txt"))
+>>>>>>> Stashed changes
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
