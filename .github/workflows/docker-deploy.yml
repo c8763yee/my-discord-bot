@@ -16,8 +16,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-        docker-compose -f docker-compose-ci.yml down
-        docker build -t bot .
+          docker compose -f docker-compose-ci.yml down
+          docker build -t bot .
 
       - name: Deploy to Docker with secret
         env:
