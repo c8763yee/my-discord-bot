@@ -5,7 +5,7 @@ from discord.ext import commands
 from loggers import setup_package_logger
 
 from .tasks import RaspberryPiTasks
-from .utils import RaspberryPiUtils, StatsFormatter
+from .utils import RaspberryPiUtils, RaspberryFormatter
 
 logger = setup_package_logger(__name__)
 
@@ -33,5 +33,5 @@ class RaspberryPiCMD(RaspberryPiTasks):
     @pi.command("stats")
     async def stats(self, ctx: commands.Context):
         message = await self.utils.get_stats()
-        embed = await StatsFormatter.format_stats(message)
+        embed = await RaspberryFormatter.stats(message)
         await ctx.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed)
