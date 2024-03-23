@@ -65,20 +65,18 @@ class Bot(commands.Bot):
         error_file = StringIO(error_message)
 
         self.logger.exception(error)
-        await ctx.send(embed=await CogsExtension.create_embed(
-            "Error occurred",
-            f"\n{error_type}",
-            discord.Color.red(),
-            None,
-            Field(name="Error info", value=dedent(f"""
-            Error Type: `{error_type}`
-<<<<<<< Updated upstream
-            """), inline=False),
-        ), ephemeral=True)
-=======
-            """), inline=False)),
+        await ctx.send(
+            embed=await CogsExtension.create_embed(
+                "Error occurred",
+                f"\n{error_type}",
+                discord.Color.red(),
+                None,
+                Field(
+                    name="Error info",
+                    value=dedent(f"""
+                        Error Type: `{error_type}`
+                        """), inline=False)),
             file=discord.File(fp=error_file, filename="error.txt"))
->>>>>>> Stashed changes
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
