@@ -15,9 +15,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        run: |
-          docker compose -f docker-compose-ci.yml down
-          docker build -t bot .
+        run: docker build -t bot .
 
       - name: Deploy to Docker with secret
         env:
