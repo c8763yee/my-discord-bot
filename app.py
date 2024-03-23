@@ -1,6 +1,7 @@
 import logging
 import os
-from io import StringIO
+import sys
+import traceback
 from datetime import datetime
 from textwrap import dedent
 
@@ -60,25 +61,32 @@ class Bot(commands.Bot):
         3. error type
         4. traceback
         """
+        exc_info = sys.exc_info()
+        if exc_info and exc_info[-1]:
+            traceback_info = traceback.extract_tb(exc_info[-1])[-1]
+            error_line = traceback_info.lineno
+            error_char = traceback_info.col_offset
+        else:
+            error_line = "N/A"
+            error_char = "N/A"
+
         error_type = error.__class__.__name__
         error_message = str(error)
-        error_file = StringIO(error_message)
-
         self.logger.exception(error)
         await ctx.send(embed=await CogsExtension.create_embed(
             "Error occurred",
-            f"\n{error_type}",
+            f"\n{error_type} occurred at line {error_line}, character {error_char}\n",
             discord.Color.red(),
             None,
             Field(name="Error info", value=dedent(f"""
+            Position: `{error_line}:{error_char}`
+            Error message: 
+            ```py
+            {error_message}
+            ```
             Error Type: `{error_type}`
-<<<<<<< Updated upstream
             """), inline=False),
         ), ephemeral=True)
-=======
-            """), inline=False)),
-            file=discord.File(fp=error_file, filename="error.txt"))
->>>>>>> Stashed changes
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
