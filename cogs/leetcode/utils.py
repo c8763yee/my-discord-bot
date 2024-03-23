@@ -3,13 +3,14 @@ import json
 import os
 import re
 from textwrap import dedent
+from typing import Optional
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
 
 from cogs import CogsExtension
 from core.models import Field
-from loggers import setup_package_logger, TZ
+from loggers import TZ, setup_package_logger
 
 from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
 
@@ -31,7 +32,7 @@ difficulty_color = {
 
 class LeetCodeUtils(CogsExtension):
 
-    async def send_request_to_leetcode_API(
+    async def _send_request_to_leetcode_API(
         self, operation: str, query: str = LEETCODE_USER_QUERY, **variables
     ) -> dict:
         request_body = {
@@ -60,7 +61,7 @@ class LeetCodeUtils(CogsExtension):
         now = datetime.datetime.now(tz=TZ)
         response = {}
         for operation in operation_name:
-            operation_response = await self.send_request_to_leetcode_API(
+            operation_response = await self._send_request_to_leetcode_API(
                 operation, username=username, year=now.year, month=now.month, limit=1
             )
 
@@ -72,11 +73,14 @@ class LeetCodeUtils(CogsExtension):
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        return (await self.send_request_to_leetcode_API("questionOfToday"))["data"]
+        return (await self._send_request_to_leetcode_API("questionOfToday"))["data"]
+
+    async def fetch_leetcode_contest(self) -> list[dict]:
+        return (await self._send_request_to_leetcode_API("upcomingContests"))["data"]["upcomingContests"]
 
 
 class LeetCodeResponseFormatter(CogsExtension):
-    async def format_user_info(self, response: dict, username: str) -> discord.Embed:
+    async def user_info(self, response: dict, username: str) -> discord.Embed:
         matched_user = response["userPublicProfile"]["matchedUser"]
         matched_userprofile = matched_user["profile"]
 
@@ -134,7 +138,7 @@ class LeetCodeResponseFormatter(CogsExtension):
             thumbnail_url=thumbnail,
         )
 
-    async def format_daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
+    async def daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
         question = response["activeDailyCodingChallengeQuestion"]["question"]
         ID = question["frontendQuestionId"]
         title = f'{ID}. {question["title"]}'
@@ -160,3 +164,37 @@ class LeetCodeResponseFormatter(CogsExtension):
             thumbnail_url=THUMBNAIL_URL,
         )
         return embed, title
+
+    async def contest(self, response: dict) -> tuple[bool, Optional[discord.Embed]]:
+
+        if await self.today_is_contest(response) is False:
+            return False, None
+
+        start_time = datetime.datetime.fromtimestamp(
+            response["startTime"], tz=TZ)
+        title = description = response["title"]
+        link = f'https://leetcode.com/contest/{response["titleSlug"]}/'
+
+        embed = await self.create_embed(
+            title,
+            description,
+            discord.Color.blurple(),
+            link,
+            Field(name="Start Time", value=start_time.strftime(
+                "%Y-%m-%d %H:%M:%S"), inline=False),
+            thumbnail_url=THUMBNAIL_URL,
+        )
+        return True, embed
+
+    async def contests(self, response: list[dict]) -> tuple[bool, list[discord.Embed]]:
+        embeds = []
+        for contest in response:
+            is_success, embed = await self.contest(contest)
+            if is_success:
+                embeds.append(embed)
+        return embeds != [], embeds
+
+    async def today_is_contest(self, contest: dict) -> bool:
+        start_time = datetime.datetime.fromtimestamp(
+            contest["startTime"], tz=TZ)
+        return start_time.date() == datetime.datetime.now(tz=TZ).date()
