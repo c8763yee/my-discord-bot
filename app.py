@@ -63,10 +63,12 @@ class Bot(commands.Bot):
         4. traceback
         """
         error_type = error.__class__.__name__
-        error_message = f"""
-                        Error Type: `{error_type}`
-                        Error Message: `{error}`
-                        """
+        error_message = dedent(
+            f"""
+            Error Type: `{error_type}`
+            Error Message: `{error}`
+            """
+        )
         error_file = StringIO(error_message)
         embed = await CogsExtension.create_embed(
             "Error occurred",

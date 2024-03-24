@@ -12,7 +12,7 @@ class ChatGPTCMD(ChatGPTTasks):
 
     def __init__(self, bot: commands.Bot):
         super().__init__(bot)
-        self.formatter = ChatGPTResopnseFormatter()
+        self.formatter = ChatGPTResopnseFormatter(bot)
 
     @commands.hybrid_group(ephermal=True)
     async def chatgpt(self, ctx: commands.Context):

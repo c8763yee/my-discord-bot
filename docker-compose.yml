@@ -7,7 +7,9 @@ services:
     container_name: test_bot
     volumes:
       - ./logs:/app/logs:rw
-
+    networks:
+      - test_bot
+    user: user
 networks:
-  bot:
+  test_bot:
     driver: bridge

@@ -1,0 +1,7 @@
+{
+    "taipyStudio.config.mainPythonFile": "loggers.py",
+    "taipyStudio.gUI.elementsFilePaths": [],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
+}

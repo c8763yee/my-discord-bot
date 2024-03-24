@@ -161,7 +161,7 @@ cython_debug/
 response.json
 
 # Visual Studio Code
-.vscode/
+
 *.code-workspace
 logs/**
 !logs/.gitkeep

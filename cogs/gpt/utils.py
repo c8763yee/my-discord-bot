@@ -23,7 +23,7 @@ class ChatGPT:
         "role": "system",
         "content": dedent(
             """
-        You are a helpful assistant to help me with my tasks. 
+        You are a helpful assistant to help me with my tasks.
         please answer my questions with my language.
         """
         ),
