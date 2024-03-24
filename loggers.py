@@ -53,7 +53,7 @@ def setup_package_logger(package_name, file_level=logging.INFO, console_level=lo
     package_path_elements = package_name.split('.')
     log_directory_path = os.sep.join(package_path_elements[:-1])
     logger_name = package_path_elements[-1]
-    os.makedirs(f'logs/{log_directory_path}', exist_ok=True)
+    os.makedirs(f'logs/{log_directory_path}', exist_ok=True, mode=0o777)
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
     console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)

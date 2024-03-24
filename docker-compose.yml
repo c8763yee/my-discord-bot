@@ -7,10 +7,6 @@ services:
     container_name: test_bot
     volumes:
       - ./logs:/app/logs:rw
-      - /usr/bin:/usr/bin # Mount the /usr/bin directory
-    devices:
-      # Mount the /dev/vcio device for the Raspberry Pi
-      - /dev/vcio
 
 networks:
   bot:

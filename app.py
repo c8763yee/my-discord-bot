@@ -3,6 +3,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from io import StringIO
 from textwrap import dedent
 
 import discord
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 from cogs import CogsExtension
 from cogs.arcaea.utils import APIUtils
 from core.models import Field
-from loggers import setup_package_logger, TZ
+from loggers import TZ, setup_package_logger
 
 if os.path.exists('env/bot.env'):
     load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
@@ -71,20 +72,19 @@ class Bot(commands.Bot):
             error_char = "N/A"
 
         error_type = error.__class__.__name__
-        error_message = str(error)
-        self.logger.exception(error)
-        await ctx.send(
-            embed=await CogsExtension.create_embed(
-                "Error occurred",
-                f"\n{error_type}",
-                discord.Color.red(),
-                None,
-                Field(
-                    name="Error info",
-                    value=dedent(f"""
+        error_message = f"""
                         Error Type: `{error_type}`
-                        """), inline=False)),
-            file=discord.File(fp=error_file, filename="error.txt"))
+                        Error Message: `{error}`
+                        """
+        error_file = StringIO(error_message)
+        embed = await CogsExtension.create_embed(
+            "Error occurred",
+            f"\n{error_type}",
+            discord.Color.red(),
+            None,
+            Field(name="Error info", value=dedent(error_message), inline=False))
+        self.logger.exception(error)
+        await ctx.send(embed=embed, ephemeral=True, file=discord.File(fp=error_file, filename="error.txt"))
 
 
 # ---------------------------- Initialising the bot ---------------------------- #

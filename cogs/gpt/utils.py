@@ -7,6 +7,7 @@ from openai.types import CompletionUsage, Image
 from openai.types.chat import ChatCompletion
 
 from cogs import CogsExtension
+from config import OpenAIConfig
 from core.models import Field
 from loggers import setup_package_logger
 
@@ -75,11 +76,44 @@ class ChatGPT:
         results = await cls.client.images.generate(prompt=prompt, model=model, quality=quality, size=size)
         return results.data
 
+    async def vision(self, text: str, images_b64: str):
+        """
+        returns the response from the vision model
+        Args:
+            text: the prompt to the model
+            image_text: the base64 encoded image
+        """
+        if self._detect_malicious_content(text):
+            raise ValueError("This Prompt contains malicious content")
+
+        vision_prompt = [{"type": "text", "text": text}]
+        for image_b64 in images_b64:
+            image_url = f"data:image/png;base64,{image_b64}"
+            vision_prompt.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": (image_url), 'detail': OpenAIConfig.VISION_DETAIL}
+                }
+            )
+        vision_response, usage = await self.ask(vision_prompt, model='gpt-4-vision-preview')
+        # filter out the markdown syntax from the response
+        return vision_response, usage
+
 
 class ChatGPTUtils(CogsExtension):
-    async def ask(self, question: str) -> tuple[str, discord.Embed]:
+    async def usage(self, question: str) -> str:
         chatbot = ChatGPT()
         answer, usage = await chatbot.ask(question)
+        return answer
+
+    async def generate_image(self, prompt: str) -> str:
+        chatbot = ChatGPT()
+        images = await chatbot.create_images(prompt)
+        return images[0].url
+
+
+class ChatGPTResopnseFormatter(ChatGPTUtils):
+    async def usage(self,  usage: CompletionUsage) -> tuple[str, discord.Embed]:
         usage_embed = await self.create_embed(
             'ChatGPT Usage Information',
             'In this response, the usage information of the ChatGPT API is included.',
@@ -91,9 +125,4 @@ class ChatGPTUtils(CogsExtension):
             thumbnail_url='https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg',
         )
 
-        return answer, usage_embed
-
-    async def generate_image(self, prompt: str) -> str:
-        chatbot = ChatGPT()
-        images = await chatbot.create_images(prompt)
-        return images[0].url
+        return usage_embed
