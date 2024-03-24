@@ -5,35 +5,121 @@ from discord.ext import tasks
 
 from cogs import CogsExtension
 
-from .utils import LeetCodeResponseFormatter, LeetCodeUtils
+from .utils import LeetCodeUtils, LeetCodeResponseFormatter
 
+# variables
 daily_challenge_time = datetime.time(
     hour=8, minute=0, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))
+)
+biweekly_contest_start_time = datetime.time(
+    hour=22, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))
+)
+biweekly_contest_end_time = datetime.time(
+    hour=23, minute=45, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))
+)
+weekly_contest_start_time = datetime.time(
+    hour=10, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))
+)
+weekly_contest_end_time = datetime.time(
+    hour=11, minute=45, second=14, tzinfo=datetime.timezone(datetime.timedelta(hours=8))
 )
 
 
 class LeetCodeTasks(CogsExtension):
-    # variables
     def __init__(self, bot):
         super().__init__(bot)
         self.utils = LeetCodeUtils(bot)
         self.formatter = LeetCodeResponseFormatter(bot)
 
-    async def cog_load(self):
-        self.fetch_leetcode_daily_challenge.start()  # pylint: disable=no-member
+    def cog_load(self):
+        self.fetch_leetcode_daily_challenge.start()
+        self.fetch_leetcode_contest.start()
+        self.biweekly_contest_start_reminder.start()
+        self.biweekly_contest_end_reminder.start()
+        self.weekly_contest_start_reminder.start()
+        self.weekly_contest_end_reminder.start()
 
-    async def cog_unload(self):
-        self.fetch_leetcode_daily_challenge.stop()  # pylint: disable=no-member
+    def cog_unload(self):
+        self.fetch_leetcode_daily_challenge.stop()
+        self.fetch_leetcode_contest.stop()
+        self.biweekly_contest_start_reminder.stop()
+        self.biweekly_contest_end_reminder.stop()
+        self.weekly_contest_start_reminder.stop()
+        self.weekly_contest_end_reminder.stop()
 
     # methods(tasks)
 
     @tasks.loop(time=daily_challenge_time)
     async def fetch_leetcode_daily_challenge(self):
-        channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        response = await self.utils.fetch_daily_challenge()
-        embed, title = await self.formatter.format_daily_challenge(response)
-        owner_id = os.getenv("OWNER_ID", None)
-        await channel.send(
-            f"<@{owner_id}>\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}",
-            embed=embed,
-        )
+        response = await self.utils.fetch_leetcode_daily_challenge()
+        embed, title = await self.formatter.daily_challenge(response)
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}',
+                               embed=embed)
+
+    @tasks.loop(time=daily_challenge_time)
+    async def fetch_leetcode_contest(self):
+        response = await self.utils.fetch_leetcode_contest()
+        is_success, embeds = await self.formatter.contests(response, only_today=True)
+        if is_success is False:
+            return
+
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **Upcoming LeetCode Contest** :tada:  \n',
+                               embeds=embeds)
+
+    @tasks.loop(time=biweekly_contest_start_time)
+    async def biweekly_contest_start_reminder(self):
+        response = await self.utils.fetch_leetcode_contest()
+        target_contest = None
+        for contest in response:
+            if contest["title"].startswith("Biweekly Contest"):
+                target_contest = contest
+                break
+        if target_contest is None or self.formatter.today_is_contest(target_contest) is False:
+            return
+
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **This week of the Biweekly LeetCode Contest is started!** :tada:  \n')
+
+    @tasks.loop(time=biweekly_contest_end_time)
+    async def biweekly_contest_end_reminder(self):
+        response = await self.utils.fetch_leetcode_contest()
+        target_contest = None
+        for contest in response:
+            if contest["title"].startswith("Biweekly Contest"):
+                target_contest = contest
+                break
+        if target_contest is None or self.formatter.today_is_contest(target_contest) is False:
+            return
+
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **This week of the Biweekly LeetCode Contest will end in 15 minutes!** :tada:  \n')
+
+    @tasks.loop(time=weekly_contest_start_time)
+    async def weekly_contest_start_reminder(self):
+        response = await self.utils.fetch_leetcode_contest()
+        target_contest = None
+        for contest in response:
+            if contest["title"].startswith("Weekly Contest"):
+                target_contest = contest
+                break
+        if target_contest is None or await self.formatter.today_is_contest(target_contest) is False:
+            return
+
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **This week of the weekly LeetCode Contest is started!** :tada:  \n')
+
+    @tasks.loop(time=weekly_contest_end_time)
+    async def weekly_contest_end_reminder(self):
+        response = await self.utils.fetch_leetcode_contest()
+        target_contest = None
+        for contest in response:
+            if contest["title"].startswith("Weekly Contest"):
+                target_contest = contest
+                break
+        if target_contest is None or await self.formatter.today_is_contest(target_contest) is False:
+            return
+
+        for channel in self.bot.get_all_channels():
+            await channel.send(f'@here\n :tada: **This week of the weekly LeetCode Contest will end in 15 minutes!** :tada:  \n')
