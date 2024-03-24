@@ -61,24 +61,19 @@ class Bot(commands.Bot):
         4. traceback
         """
         error_type = error.__class__.__name__
-        error_message = str(error)
+        error_message = f"""
+                        Error Type: `{error_type}`
+                        Error Message: `{error}`
+                        """
         error_file = StringIO(error_message)
-
-        self.logger.exception(error)
-        await ctx.send(embed=await CogsExtension.create_embed(
+        embed = await CogsExtension.create_embed(
             "Error occurred",
             f"\n{error_type}",
             discord.Color.red(),
             None,
-            Field(name="Error info", value=dedent(f"""
-            Error Type: `{error_type}`
-<<<<<<< Updated upstream
-            """), inline=False),
-        ), ephemeral=True)
-=======
-            """), inline=False)),
-            file=discord.File(fp=error_file, filename="error.txt"))
->>>>>>> Stashed changes
+            Field(name="Error info", value=dedent(error_message), inline=False))
+        self.logger.exception(error)
+        await ctx.send(embed=embed, ephemeral=True, file=discord.File(fp=error_file, filename="error.txt"))
 
 
 # ---------------------------- Initialising the bot ---------------------------- #

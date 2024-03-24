@@ -7,18 +7,19 @@ from typing import Optional
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
+from dotenv import load_dotenv
 
 from cogs import CogsExtension
 from core.models import Field
 from loggers import TZ, setup_package_logger
-from dotenv import load_dotenv
+
 from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
 
 logger = setup_package_logger(__name__)
 
 if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
-with open("secret.json", "r") as f:
+with open("secret.json", "r", encoding='utf-8') as f:
     script = json.load(f)
     headers = script["headers"]
     cookies = script["cookies"]
@@ -34,7 +35,7 @@ difficulty_color = {
 
 class LeetCodeUtils(CogsExtension):
 
-    async def _send_request_to_leetcode_API(
+    async def _send_request_to_leetcode_api(
         self, operation: str, query: str = LEETCODE_USER_QUERY, **variables
     ) -> dict:
         request_body = {
@@ -44,13 +45,14 @@ class LeetCodeUtils(CogsExtension):
         }
         async with ClientSession() as session:
             async with session.post(
-                API_URL, json=request_body, headers=headers, cookies=cookies
-            ) as resp:
+                    API_URL, json=request_body, headers=headers, cookies=cookies) as resp:
                 try:
                     response = await resp.json()
                 except ContentTypeError as e:
-                    logger.error(f"Error occurred: {e}")
-                    raise ValueError(f"Error occurred while fetching data from LeetCode API, {(await resp.text())}")
+                    logger.error("Error occurred: %s", e)
+                    raise ValueError(
+                        f"Error occurred while fetching data from LeetCode API, {(await resp.text())}"
+                    ) from e
         return response
 
     async def fetch_leetcode_user_info(self, username: str) -> dict:
@@ -63,7 +65,7 @@ class LeetCodeUtils(CogsExtension):
         now = datetime.datetime.now(tz=TZ)
         response = {}
         for operation in operation_name:
-            operation_response = await self._send_request_to_leetcode_API(
+            operation_response = await self._send_request_to_leetcode_api(
                 operation, username=username, year=now.year, month=now.month, limit=1
             )
 
@@ -75,12 +77,12 @@ class LeetCodeUtils(CogsExtension):
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        return (await self._send_request_to_leetcode_API("questionOfToday"))["data"]
+        return (await self._send_request_to_leetcode_api("questionOfToday"))["data"]
 
     async def fetch_leetcode_contest(self) -> list[dict]:
-        with open('queries/feed.graphql', 'r') as f:
-            LEETCODE_CONTEST_QUERY = f.read()
-        return (await self._send_request_to_leetcode_API("upcomingContests", query=LEETCODE_CONTEST_QUERY))["data"]["upcomingContests"]
+        with open('queries/feed.graphql', 'r', encoding='utf-8') as file:
+            LEETCODE_CONTEST_QUERY = file.read()
+        return (await self._send_request_to_leetcode_api("upcomingContests", query=LEETCODE_CONTEST_QUERY))["data"]["upcomingContests"]
 
 
 class LeetCodeResponseFormatter(CogsExtension):
@@ -110,7 +112,7 @@ class LeetCodeResponseFormatter(CogsExtension):
         # Fields
         # ------------------------------------------------
         recent_AC_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
-        recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com/{recent_AC_list[0]["titleSlug"]})'
+        recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com/problems/{recent_AC_list[0]["titleSlug"]})'
         # ------------------------------------------------
         rating = dedent(
             f"""
@@ -190,13 +192,15 @@ class LeetCodeResponseFormatter(CogsExtension):
         )
         return True, embed
 
-    async def contests(self, response: list[dict], only_today: bool = False) -> tuple[bool, list[discord.Embed]]:
+    async def contests(self,
+                       response: list[dict],
+                       only_today: bool = False) -> tuple[bool, list[discord.Embed]]:
         embeds = []
         for contest in response:
             is_success, embed = await self.contest(contest, only_today)
             if is_success:
                 embeds.append(embed)
-        return embeds != [], embeds
+        return bool(embeds), embeds
 
     async def today_is_contest(self, contest: dict) -> bool:
         start_time = datetime.datetime.fromtimestamp(
