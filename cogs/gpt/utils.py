@@ -1,4 +1,3 @@
-import os
 from textwrap import dedent
 
 import discord
@@ -22,9 +21,12 @@ class ChatGPT:
 
     behavior = {
         "role": "system",
-        "content": dedent("""
-        You are a helpful assistant to help me with my tasks. please answer my questions with my language.
-        """)
+        "content": dedent(
+            """
+        You are a helpful assistant to help me with my tasks. 
+        please answer my questions with my language.
+        """
+        ),
     }
 
     client = openai.AsyncOpenAI()
@@ -38,20 +40,20 @@ class ChatGPT:
         response = await cls.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        cls.logger.info(f"Moderation result: {result}")
-        return (result.flagged or
-                any(cate is True
-                    for cate in result.categories.model_dump().values())
-                )
+        cls.logger.info("Moderation result: %s", result)
+        return result.flagged or any(
+            cate is True for cate in result.categories.model_dump().values()
+        )
 
     async def send_message(
-            self,
-            max_tokens: int = const.MAX_TOKENS,
-            model: str = const.CHAT_MODEL,
-            **kwargs) -> ChatCompletion:
-        response = await self.client.chat.completions.create(messages=self._history,
-                                                             max_tokens=max_tokens,
-                                                             model=model, **kwargs)
+        self,
+        max_tokens: int = const.MAX_TOKENS,
+        model: str = const.CHAT_MODEL,
+        **kwargs,
+    ) -> ChatCompletion:
+        response = await self.client.chat.completions.create(
+            messages=self._history, max_tokens=max_tokens, model=model, **kwargs
+        )
         return response
 
     async def ask(self, prompt: str, **open_kwargs) -> tuple[str, CompletionUsage]:
@@ -73,7 +75,9 @@ class ChatGPT:
         if await cls.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
 
-        results = await cls.client.images.generate(prompt=prompt, model=model, quality=quality, size=size)
+        results = await cls.client.images.generate(
+            prompt=prompt, model=model, quality=quality, size=size
+        )
         return results.data
 
     async def vision(self, text: str, images_b64: str):
@@ -83,7 +87,7 @@ class ChatGPT:
             text: the prompt to the model
             image_text: the base64 encoded image
         """
-        if self._detect_malicious_content(text):
+        if self.detect_malicious_content(text):
             raise ValueError("This Prompt contains malicious content")
 
         vision_prompt = [{"type": "text", "text": text}]
@@ -92,19 +96,22 @@ class ChatGPT:
             vision_prompt.append(
                 {
                     "type": "image_url",
-                    "image_url": {"url": (image_url), 'detail': OpenAIConfig.VISION_DETAIL}
+                    "image_url": {
+                        "url": (image_url),
+                        "detail": OpenAIConfig.VISION_DETAIL,
+                    },
                 }
             )
-        vision_response, usage = await self.ask(vision_prompt, model='gpt-4-vision-preview')
+        vision_response, usage = await self.ask(vision_prompt, model="gpt-4-vision-preview")
         # filter out the markdown syntax from the response
         return vision_response, usage
 
 
 class ChatGPTUtils(CogsExtension):
-    async def usage(self, question: str) -> str:
+    async def get_usage(self, question: str) -> str:
         chatbot = ChatGPT()
-        answer, usage = await chatbot.ask(question)
-        return answer
+        answer, token_usage = await chatbot.ask(question)
+        return answer, token_usage
 
     async def generate_image(self, prompt: str) -> str:
         chatbot = ChatGPT()
@@ -113,16 +120,16 @@ class ChatGPTUtils(CogsExtension):
 
 
 class ChatGPTResopnseFormatter(ChatGPTUtils):
-    async def usage(self,  usage: CompletionUsage) -> tuple[str, discord.Embed]:
+    async def usage(self, usage: CompletionUsage) -> tuple[str, discord.Embed]:
         usage_embed = await self.create_embed(
-            'ChatGPT Usage Information',
-            'In this response, the usage information of the ChatGPT API is included.',
-            discord.Color.blurple(),
-            'https://chat.openai.com/docs/usage',
-            Field(name='completion_tokens', value=usage.completion_tokens),
-            Field(name='prompt_tokens', value=usage.prompt_tokens),
-            Field(name='total_tokens', value=usage.total_tokens),
-            thumbnail_url='https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg',
+            "ChatGPT Usage Information",
+            "In this response, the usage information of the ChatGPT API is included.",
+            Field(name="completion_tokens", value=usage.completion_tokens),
+            Field(name="prompt_tokens", value=usage.prompt_tokens),
+            Field(name="total_tokens", value=usage.total_tokens),
+            thumbnail_url="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg",
+            color=discord.Color.blurple(),
+            url="https://chat.openai.com/docs/usage",
         )
 
         return usage_embed

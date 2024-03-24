@@ -1,7 +1,5 @@
 import logging
 import os
-import sys
-import traceback
 from datetime import datetime
 from io import StringIO
 from textwrap import dedent
@@ -10,15 +8,16 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
+import cogs
 from cogs import CogsExtension
 from cogs.arcaea.utils import APIUtils
 from core.models import Field
 from loggers import TZ, setup_package_logger
 
-if os.path.exists('env/bot.env'):
-    load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
-os.umask(0o000)
-logger = setup_package_logger('main', file_level=logging.INFO)
+if os.path.exists("env/bot.env"):
+    load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
+
+logger = setup_package_logger("main", file_level=logging.INFO)
 
 
 @tasks.loop(minutes=1)
@@ -27,7 +26,7 @@ async def update_time():
     await bot.change_presence(
         activity=discord.CustomActivity(
             name=f'現在時間： {now.strftime("%Y-%m-%d %H:%M")}',
-            emoji=discord.PartialEmoji(name="🕒")
+            emoji=discord.PartialEmoji(name="🕒"),
         )
     )
 
@@ -35,11 +34,10 @@ async def update_time():
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger: logging.Logger = setup_package_logger(
-            __name__, file_level=logging.INFO)
+        self.logger: logging.Logger = setup_package_logger(__name__, file_level=logging.INFO)
 
     async def on_ready(self):
-        import cogs
+
         channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
 
         for modules in cogs.__all__:
@@ -54,7 +52,9 @@ class Bot(commands.Bot):
             silent=True,
         )
 
-    async def on_command_error(self, ctx: commands.Context, error):
+    async def on_command_error(
+        self, ctx: commands.Context, error
+    ):  # pylint: disable=arguments-differ
         """
         response embed with error message
         1. line number and character position
@@ -62,15 +62,6 @@ class Bot(commands.Bot):
         3. error type
         4. traceback
         """
-        exc_info = sys.exc_info()
-        if exc_info and exc_info[-1]:
-            traceback_info = traceback.extract_tb(exc_info[-1])[-1]
-            error_line = traceback_info.lineno
-            error_char = traceback_info.col_offset
-        else:
-            error_line = "N/A"
-            error_char = "N/A"
-
         error_type = error.__class__.__name__
         error_message = f"""
                         Error Type: `{error_type}`
@@ -80,11 +71,15 @@ class Bot(commands.Bot):
         embed = await CogsExtension.create_embed(
             "Error occurred",
             f"\n{error_type}",
-            discord.Color.red(),
-            None,
-            Field(name="Error info", value=dedent(error_message), inline=False))
+            Field(name="Error info", value=dedent(error_message), inline=False),
+            color=discord.Color.red(),
+        )
         self.logger.exception(error)
-        await ctx.send(embed=embed, ephemeral=True, file=discord.File(fp=error_file, filename="error.txt"))
+        await ctx.send(
+            embed=embed,
+            ephemeral=True,
+            file=discord.File(fp=error_file, filename="error.txt"),
+        )
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
@@ -134,8 +129,8 @@ async def reload(ctx: commands.Context, extension: str):
 if __name__ == "__main__":
     assert os.environ.get("DISCORD_BOT_TOKEN", None) is not None, dedent(
         """
-    DISCORD_BOT_TOKEN not found in .env, please add it in env/bot.env
-    or if you are first time using this bot, please rename envExample to env and fill in the details.
+    DISCORD_BOT_TOKEN not found in env file, please add it in env/bot.env
+    if you are first time using this bot, please rename envExample to env and fill in the token
     """
     )
     try:

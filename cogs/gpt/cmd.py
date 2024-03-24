@@ -26,8 +26,8 @@ class ChatGPTCMD(ChatGPTTasks):
     @chatgpt.command("ask")
     async def ask(self, ctx: commands.Context, question: str):
         await ctx.interaction.response.defer()
-        answer = await self.utils.usage(question)
-        usage_embed = await self.formatter.usage(answer)
+        answer, usage = await self.utils.get_usage(question)
+        usage_embed = await self.formatter.get_usage(usage)
         return await ctx.interaction.followup.send(answer, embed=usage_embed)
 
     @chatgpt.command("dalle")
