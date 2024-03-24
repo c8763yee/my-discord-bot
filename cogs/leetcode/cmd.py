@@ -17,23 +17,14 @@ class LeetCodeCMD(LeetCodeTasks):
     async def user(self, ctx: commands.Context, username: str):
         await ctx.interaction.response.defer()
         user_info = await self.utils.fetch_leetcode_user_info(username)
-        embed = await self.formatter.user_info(user_info, username)
+        embed = await self.formatter.format_user_info(user_info, username)
         await ctx.interaction.followup.send(embed=embed)
 
-    @leetcode.command("daily_challenge")
+    @leetcode.command("daily")
     async def daily(self, ctx: commands.Context):
         await ctx.interaction.response.defer()
         response = await self.utils.fetch_leetcode_daily_challenge()
-        embed, title = await self.formatter.daily_challenge(response)
-        await ctx.interaction.followup.send(f'Daily LeetCode Challenge: {title}', embed=embed)
-
-    @leetcode.command("contest")
-    async def contest(self, ctx: commands.Context, only_today: bool = False):
-        await ctx.interaction.response.defer()
-        response = await self.utils.fetch_leetcode_contest()
-        is_success, embeds = await self.formatter.contests(response, only_today)
-        if is_success is False:
-            await ctx.interaction.followup.send("No upcoming contest")
-            return
-
-        await ctx.interaction.followup.send('Upcoming LeetCode Contest', embeds=embeds)
+        embed, title = await self.formatter.format_daily_challenge(response)
+        owner_id = os.getenv('OWNER_ID', None)
+        await ctx.interaction.followup.send(f'<@{owner_id}>\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}',
+                                            embed=embed)

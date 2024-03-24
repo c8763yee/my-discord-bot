@@ -3,7 +3,6 @@ import json
 import os
 import re
 from textwrap import dedent
-from typing import Optional
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
@@ -24,7 +23,6 @@ with open("secret.json", "r", encoding='utf-8') as f:
     headers = script["headers"]
     cookies = script["cookies"]
     cookies["csrftoken"] = os.getenv("LEETCODE_CSRFTOKEN", None)
-    headers["x-csrftoken"] = cookies["csrftoken"]
 
 difficulty_color = {
     "Easy": discord.Color.green(),
@@ -86,7 +84,7 @@ class LeetCodeUtils(CogsExtension):
 
 
 class LeetCodeResponseFormatter(CogsExtension):
-    async def user_info(self, response: dict, username: str) -> discord.Embed:
+    async def format_user_info(self, response: dict, username: str) -> discord.Embed:
         matched_user = response["userPublicProfile"]["matchedUser"]
         matched_userprofile = matched_user["profile"]
 
@@ -144,7 +142,7 @@ class LeetCodeResponseFormatter(CogsExtension):
             thumbnail_url=thumbnail,
         )
 
-    async def daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
+    async def format_daily_challenge(self, response: dict) -> tuple[discord.Embed, str]:
         question = response["activeDailyCodingChallengeQuestion"]["question"]
         ID = question["frontendQuestionId"]
         title = f'{ID}. {question["title"]}'

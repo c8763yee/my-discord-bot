@@ -6,7 +6,7 @@ from discord.ext import tasks
 from cogs import CogsExtension
 from loggers import setup_package_logger
 
-from .utils import RaspberryPiUtils, RaspberryFormatter
+from .utils import RaspberryPiUtils, StatsFormatter
 
 logger = setup_package_logger(__name__)
 

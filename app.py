@@ -1,7 +1,9 @@
 import logging
 import os
-from io import StringIO
+import sys
+import traceback
 from datetime import datetime
+from io import StringIO
 from textwrap import dedent
 
 import discord
@@ -11,7 +13,7 @@ from dotenv import load_dotenv
 from cogs import CogsExtension
 from cogs.arcaea.utils import APIUtils
 from core.models import Field
-from loggers import setup_package_logger, TZ
+from loggers import TZ, setup_package_logger
 
 if os.path.exists('env/bot.env'):
     load_dotenv(dotenv_path='env/bot.env', verbose=True, override=True)
@@ -60,6 +62,15 @@ class Bot(commands.Bot):
         3. error type
         4. traceback
         """
+        exc_info = sys.exc_info()
+        if exc_info and exc_info[-1]:
+            traceback_info = traceback.extract_tb(exc_info[-1])[-1]
+            error_line = traceback_info.lineno
+            error_char = traceback_info.col_offset
+        else:
+            error_line = "N/A"
+            error_char = "N/A"
+
         error_type = error.__class__.__name__
         error_message = f"""
                         Error Type: `{error_type}`
