@@ -1,0 +1,36 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: no-commit-to-branch
+      - id: detect-private-key
+
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        name: black
+        types: [python]
+
+        args: ["--line-length", "100", "."]
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort
+        types: [python]
+
+  - repo: https://github.com/pylint-dev/pylint
+    rev: 1fadd2a
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args: [
+            "--fail-under=9.5", # Fail if the score is under 9.5
+            "--rcfile=.pylintrc", # Use the .pylintrc file
+          ]
