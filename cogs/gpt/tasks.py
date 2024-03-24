@@ -1,7 +1,9 @@
-import datetime
-import os
+# currently not in use, but it will be used in the future
 
-from discord.ext import tasks
+# import datetime
+# import os
+
+# from discord.ext import tasks
 
 from cogs import CogsExtension
 from loggers import setup_package_logger

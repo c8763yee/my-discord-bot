@@ -13,4 +13,4 @@ DIFFICULTY_NAMES = ["Past", "Present", "Future", "Beyond", "Eternal"]
 DIFFICULTY_COLOR = ["#165365", "#194A08", "#52184D", "#5A0813", "#5D4E76"]
 
 GRADE_NAMES = ["D", "C", "B", "A", "AA", "EX", "EX+"]
-GRADE_URL_SUFFIX = ['d', 'c', 'b', 'a', 'aa', 'ex', 'explus']
+GRADE_URL_SUFFIX = ["d", "c", "b", "a", "aa", "ex", "explus"]

@@ -23,20 +23,23 @@ class KasaCMD(KasaTasks):
         await ctx.interaction.response.defer()
         payload = await self.utils.get_power_usage(plug_id)
         embed = await KasaResponseFormatter.format_power_usage(payload)
-        await ctx.send(f'Power usage of plug {plug_id}', embed=embed)
+        await ctx.send(f"Power usage of plug {plug_id}", embed=embed)
 
     @kasa.command("emeters")
-    async def kasa_emeters(self,
-                           ctx: commands.Context,
-                           plug_ids: commands.Greedy[commands.Range[int, 0, 6]] = None):
+    async def kasa_emeters(
+        self,
+        ctx: commands.Context,
+        plug_ids: commands.Greedy[commands.Range[int, 0, 6]] = None,
+    ):
         await ctx.interaction.response.defer()
         if plug_ids is None:
-            plug_ids = range(6+1)  # default to all plugs
+            plug_ids = range(6 + 1)  # default to all plugs
 
         payloads = await self.utils.get_power_usage_multiple(plug_ids)
         embeds = await KasaResponseFormatter.format_power_usage_multiple(payloads)
         await ctx.interaction.followup.send(
-            f"Power usage of plugs ({', '.join(map(str, plug_ids))})", embeds=embeds)
+            f"Power usage of plugs ({', '.join(map(str, plug_ids))})", embeds=embeds
+        )
 
     @commands.is_owner()
     @kasa.command("on")
@@ -50,5 +53,11 @@ class KasaCMD(KasaTasks):
 
     @commands.is_owner()
     @kasa.command("toggle")
-    async def kasa_toggle(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6], status: Optional[Literal["on", "off"]] = None):
+    async def kasa_toggle(
+        self,
+        ctx: commands.Context,
+        plug_id: commands.Range[int, 0, 6],
+        status: Optional[Literal["on", "off"]] = None,
+    ):
+
         await ctx.send(await self.utils.toggle(plug_id, status))
