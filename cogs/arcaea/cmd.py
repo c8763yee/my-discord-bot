@@ -7,14 +7,18 @@ from dotenv import load_dotenv
 
 from cogs import CogsExtension
 from core.models import Field
+from loggers import setup_package_logger
 
 # fmt: off
 from .const import (DIFFICULTY_ABBR, DIFFICULTY_COLOR, DIFFICULTY_NAMES,
                     GRADE_NAMES, GRADE_URL_SUFFIX)
+# fmt: on
 from .utils import APIUtils, AssetFetcher
 
 if os.path.exists("env/arcaea.env"):
     load_dotenv("env/arcaea.env", override=True)
+
+logger = setup_package_logger(__name__)
 
 
 class ArcaeaCMD(CogsExtension):

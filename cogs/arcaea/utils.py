@@ -9,6 +9,7 @@ from loggers import setup_package_logger
 from .const import (BELOW_EX_SCORE, BELOW_EX_SCORE_DELTA, EX_RATING_DELTA,
                     EX_SCORE, EX_SCORE_DELTA, PM_RATING_DELTA, PM_SCORE)
 
+# fmt: on
 logger = setup_package_logger(__name__)
 
 headers = {
@@ -24,10 +25,7 @@ headers = {
 
 
 def is_same_song(song: dict, recent_play: dict) -> bool:
-    return (
-        song["sid"] == recent_play["song_id"]
-        and song["difficulty"] == recent_play["difficulty"]
-    )
+    return song["sid"] == recent_play["song_id"] and song["difficulty"] == recent_play["difficulty"]
 
 
 class ScoreUtils:
@@ -53,15 +51,11 @@ class ScoreUtils:
             return chart_rating + PM_RATING_DELTA
 
         if score < EX_SCORE:
-            return max(
-                chart_rating + (score - BELOW_EX_SCORE) / BELOW_EX_SCORE_DELTA, 0
-            )
+            return max(chart_rating + (score - BELOW_EX_SCORE) / BELOW_EX_SCORE_DELTA, 0)
 
         return chart_rating + EX_RATING_DELTA + (score - EX_SCORE) / EX_SCORE_DELTA
 
-    async def get_grade(
-        self, score: int
-    ) -> int:  # pylint: disable=too-many-return-statements
+    async def get_grade(self, score: int) -> int:  # pylint: disable=too-many-return-statements
         """
         Get grade from score
         EX+: 9900000
@@ -89,15 +83,15 @@ class ScoreUtils:
 class APIUtils(ScoreUtils):
 
     base_url = "https://webapi.lowiro.com"
-    _session = None
-    _loop = asyncio.get_event_loop()
+    _session: aiohttp.ClientSession = None
+    _loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
     _songlist: list = []
 
     def __init__(self, email: str, password: str):
-        self.email = email
-        self.password = password
-        self.is_logged_in = False
-        self.friend_ids = set()
+        self.email: str = email
+        self.password: str = password
+        self.is_logged_in: bool = False
+        self.friend_ids: set = set()
 
     async def _unload(self):
         await self.__class__._session.close()  # pylint: disable=protected-access
@@ -109,7 +103,7 @@ class APIUtils(ScoreUtils):
         await self._unload()
 
     async def login(self) -> None:
-        if getattr(self, "is_logged_in", False) is True:
+        if self.is_logged_in is True:
             return
 
         if self._session is None or self._session.closed:
@@ -124,9 +118,7 @@ class APIUtils(ScoreUtils):
             response = await request.json()
             self.is_logged_in = response.get("isLoggedIn")
             if not self.__class__._songlist:  # pylint: disable=protected-access
-                self.__class__._songlist = (
-                    await self.get_slst()
-                )  # pylint: disable=protected-access
+                self.__class__._songlist = await self.get_slst()  # pylint: disable=protected-access
 
     async def fetch_play_info(self, song: dict, user_id: int) -> dict:
         sid = song["sid"]
@@ -198,22 +190,16 @@ class APIUtils(ScoreUtils):
             self.base_url + "/webapi/user/me", headers=headers
         ) as response:
             resp = await response.json()
-            self.friend_ids = {
-                [friends["user_id"] for friends in resp["value"]["friends"]]
-            }
+            self.friend_ids = {friends["user_id"] for friends in resp["value"]["friends"]}
 
     async def get_slst(self) -> list[dict]:
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://www.chinosk6.cn/arcscore/get_slst"
-            ) as response:
+            async with session.get("https://www.chinosk6.cn/arcscore/get_slst") as response:
                 songlist_response = await response.json()
         return songlist_response
 
     async def open_session(self) -> None:
-        self.__class__._session = (
-            aiohttp.ClientSession()
-        )  # pylint: disable=protected-access
+        self.__class__._session = aiohttp.ClientSession()  # pylint: disable=protected-access
 
     @classmethod
     def close_session(cls) -> None:
@@ -227,7 +213,7 @@ class APIUtils(ScoreUtils):
         if not self.is_logged_in:
             await self.login()
 
-            if not self.is_logged_in:
+            if self.is_logged_in is False:
                 raise ValueError("Login failed!")
 
         await self.update_friend_list()
@@ -279,14 +265,10 @@ class APIUtils(ScoreUtils):
     async def fetch_recent(self, target_user_code: str) -> dict:
         target_user_id, username = await self.get_user_id(target_user_code)
         recent_play = await self.fetch_recent_play_info(target_user_id)
-        this_song = next(
-            filter(lambda song: is_same_song(song, recent_play), self._songlist), None
-        )
+        this_song = next(filter(lambda song: is_same_song(song, recent_play), self._songlist), None)
 
         if this_song:
-            recent_play["rating"] = (
-                this_song["rating"] / 10 if this_song["rating"] != -1 else 0
-            )
+            recent_play["rating"] = this_song["rating"] / 10 if this_song["rating"] != -1 else 0
 
         recent_play["play_rating"] = await self.score_to_rating(
             recent_play.get("rating", 0), recent_play.get("score", 0)

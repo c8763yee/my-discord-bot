@@ -5,8 +5,10 @@ RUN apt-get update -y && \
     git libpq-dev python3-dev build-essential libsnappy-dev && \
     apt-get clean && \
     pip install --no-cache-dir -r /tmp/requirements.txt && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    useradd -m user
 
-ADD . /app
+USER user
+COPY --chown=user . /app
 WORKDIR /app
 CMD ["python", "app.py"]

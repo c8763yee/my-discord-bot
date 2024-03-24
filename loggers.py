@@ -4,8 +4,10 @@ import logging
 import os
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 
-FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(funcName)s - %(message)s"
+FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d %(funcName)s - %(message)s"
+
 logging.basicConfig(level=logging.NOTSET, handlers=None)
 TZ = datetime.timezone(datetime.timedelta(hours=8))
 
@@ -29,7 +31,7 @@ class ColoredFormatter(logging.Formatter):
         super().__init__(
             fmt=fmt, datefmt=datefmt, style=style, validate=validate, defaults=defaults
         )
-        self.formats = {
+        self.formats: dict = {
             logging.DEBUG: self.blue + fmt + self.reset,
             logging.INFO: self.grey + fmt + self.reset,
             logging.WARNING: self.yellow + fmt + self.reset,
@@ -68,15 +70,17 @@ def setup_package_logger(
     console_handler.setLevel(console_level)
     console_handler.setFormatter(console_formatter)
 
-    file_handler = logging.FileHandler(
-        filename=f"logs/{log_directory_path}/{logger_name}.log".replace("//", "/")
+    logfile_name = f"logs/{log_directory_path}/{logger_name}.log".replace("//", "/")
+    file_handler = RotatingFileHandler(
+        filename=logfile_name,
+        maxBytes=10 * 1024 * 1024,  # 10 MB
     )
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
     package_logger = logging.getLogger(package_name)
-
     package_logger.addHandler(console_handler)
     package_logger.addHandler(file_handler)
+    os.chmod(logfile_name, 0o777)
     return package_logger
 
 
