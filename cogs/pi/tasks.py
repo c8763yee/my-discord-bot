@@ -28,10 +28,10 @@ class RaspberryPiTasks(CogsExtension):
         self.formatter = StatsFormatter(bot)
 
     async def cog_load(self):
-        self.get_stats.start()  # pylint: disable=no-member
+        self.get_stats.start()
 
     async def cog_unload(self):
-        self.get_stats.stop()  # pylint: disable=no-member
+        self.get_stats.stop()
 
     @tasks.loop(time=per_clock)
     async def get_stats(self):

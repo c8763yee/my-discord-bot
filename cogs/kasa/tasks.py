@@ -22,10 +22,10 @@ class KasaTasks(CogsExtension):
         self.utils = KasaUtils(bot)
 
     async def cog_load(self):
-        self.power_report.start()  # pylint: disable=no-member
+        self.power_report.start()
 
     async def cog_unload(self):
-        self.power_report.stop()  # pylint: disable=no-member
+        self.power_report.stop()
 
     # methods(tasks)
 

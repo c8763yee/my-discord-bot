@@ -3,37 +3,17 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
+      - id: check-toml
       - id: check-added-large-files
       - id: no-commit-to-branch
       - id: detect-private-key
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
     hooks:
-      - id: isort
-        name: isort
-        types: [python]
-
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-        name: black
-        types: [python]
-
-        args: ["--line-length", "100", "."]
-
-  - repo: https://github.com/pylint-dev/pylint
-    rev: 1fadd2a
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        args: [
-            "--fail-under=9.5", # Fail if the score is under 9.5
-            "--rcfile=.pylintrc", # Use the .pylintrc file
-          ]
+      - id: ruff
+        args:
+          - --fix
+      - id: ruff-format

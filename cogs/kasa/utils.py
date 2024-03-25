@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import discord
 from aiomqtt import Client
@@ -56,7 +56,7 @@ class KasaUtils(CogsExtension):
             await client.publish(f"hs300/command/off/{plug_id}", json.dumps({}).encode(), qos=1)
         return f"Turned off plug {plug_id}"
 
-    async def toggle(self, plug_id: int, status: Optional[str] = None) -> str:
+    async def toggle(self, plug_id: int, status: str | None = None) -> str:
         async with Client(MQTT_BROKER, MQTT_PORT) as client:
             await client.publish(
                 f"hs300/command/toggle/{plug_id}",

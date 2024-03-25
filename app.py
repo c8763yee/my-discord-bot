@@ -37,7 +37,6 @@ class Bot(commands.Bot):
         self.logger: logging.Logger = setup_package_logger(__name__, file_level=logging.INFO)
 
     async def on_ready(self):
-
         channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
 
         for modules in cogs.__all__:
@@ -52,9 +51,7 @@ class Bot(commands.Bot):
             silent=True,
         )
 
-    async def on_command_error(
-        self, ctx: commands.Context, error
-    ):  # pylint: disable=arguments-differ
+    async def on_command_error(self, ctx: commands.Context, error):
         """
         response embed with error message
         1. line number and character position

@@ -6,8 +6,15 @@ from requests import get
 from loggers import setup_package_logger
 
 # fmt: off
-from .const import (BELOW_EX_SCORE, BELOW_EX_SCORE_DELTA, EX_RATING_DELTA,
-                    EX_SCORE, EX_SCORE_DELTA, PM_RATING_DELTA, PM_SCORE)
+from .const import (
+    BELOW_EX_SCORE,
+    BELOW_EX_SCORE_DELTA,
+    EX_RATING_DELTA,
+    EX_SCORE,
+    EX_SCORE_DELTA,
+    PM_RATING_DELTA,
+    PM_SCORE,
+)
 
 # fmt: on
 logger = setup_package_logger(__name__)
@@ -55,7 +62,7 @@ class ScoreUtils:
 
         return chart_rating + EX_RATING_DELTA + (score - EX_SCORE) / EX_SCORE_DELTA
 
-    async def get_grade(self, score: int) -> int:  # pylint: disable=too-many-return-statements
+    async def get_grade(self, score: int) -> int:
         """
         Get grade from score
         EX+: 9900000
@@ -81,7 +88,6 @@ class ScoreUtils:
 
 
 class APIUtils(ScoreUtils):
-
     base_url = "https://webapi.lowiro.com"
     _session: aiohttp.ClientSession = None
     _loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
@@ -94,10 +100,10 @@ class APIUtils(ScoreUtils):
         self.friend_ids: set = set()
 
     async def _unload(self):
-        await self.__class__._session.close()  # pylint: disable=protected-access
+        await self.__class__._session.close()
         self.is_logged_in = False
-        self.__class__._songlist = []  # pylint: disable=protected-access
-        self.__class__._session = None  # pylint: disable=protected-access
+        self.__class__._songlist = []
+        self.__class__._session = None
 
     async def unload(self) -> None:
         await self._unload()
@@ -114,11 +120,10 @@ class APIUtils(ScoreUtils):
             data={"email": self.email, "password": self.password},
             headers=headers,
         ) as request:
-
             response = await request.json()
             self.is_logged_in = response.get("isLoggedIn")
-            if not self.__class__._songlist:  # pylint: disable=protected-access
-                self.__class__._songlist = await self.get_slst()  # pylint: disable=protected-access
+            if not self.__class__._songlist:
+                self.__class__._songlist = await self.get_slst()
 
     async def fetch_play_info(self, song: dict, user_id: int) -> dict:
         sid = song["sid"]
@@ -163,7 +168,6 @@ class APIUtils(ScoreUtils):
                 "--boundary--\r\n"
             ),
         ) as response:
-
             friend_data = await response.json()
 
         return friend_data
@@ -181,7 +185,6 @@ class APIUtils(ScoreUtils):
                 "--boundary--\r\n"
             ),
         ) as response:
-
             friend_data = await response.json()
         return friend_data
 
@@ -199,7 +202,7 @@ class APIUtils(ScoreUtils):
         return songlist_response
 
     async def open_session(self) -> None:
-        self.__class__._session = aiohttp.ClientSession()  # pylint: disable=protected-access
+        self.__class__._session = aiohttp.ClientSession()
 
     @classmethod
     def close_session(cls) -> None:

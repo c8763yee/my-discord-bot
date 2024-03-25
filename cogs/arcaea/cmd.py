@@ -9,10 +9,13 @@ from cogs import CogsExtension
 from core.models import Field
 from loggers import setup_package_logger
 
-# fmt: off
-from .const import (DIFFICULTY_ABBR, DIFFICULTY_COLOR, DIFFICULTY_NAMES,
-                    GRADE_NAMES, GRADE_URL_SUFFIX)
-# fmt: on
+from .const import (
+    DIFFICULTY_ABBR,
+    DIFFICULTY_COLOR,
+    DIFFICULTY_NAMES,
+    GRADE_NAMES,
+    GRADE_URL_SUFFIX,
+)
 from .utils import APIUtils, AssetFetcher
 
 if os.path.exists("env/arcaea.env"):
@@ -22,14 +25,10 @@ logger = setup_package_logger(__name__)
 
 
 class ArcaeaCMD(CogsExtension):
-
     def __init__(self, bot, *args, **kwargs):
         super().__init__(bot, *args, **kwargs)
         self.utils = APIUtils(
-            email=os.environ["ARCAEA_EMAIL"],
-            password=os.environ["ARCAEA_PASSWORD"],
-            *args,
-            **kwargs,
+            email=os.environ["ARCAEA_EMAIL"], password=os.environ["ARCAEA_PASSWORD"]
         )
 
     async def cog_load(self):
@@ -46,7 +45,6 @@ class ArcaeaCMD(CogsExtension):
     async def score_to_step(
         self, ctx: commands.Context, song_rating: float, char_step: int, score: int
     ):
-
         rating = await self.utils.score_to_rating(song_rating, score)
         step = await self.utils.rating_to_step(char_step, rating)
         await ctx.send(f"Score: {score} -> Step: {step}")
@@ -55,7 +53,6 @@ class ArcaeaCMD(CogsExtension):
     async def step_to_score(
         self, ctx: commands.Context, song_rating: float, char_step: int, step: int
     ):
-
         rating = await self.utils.step_to_rating(char_step, step)
         score = await self.utils.rating_to_score(rating, song_rating)
         await ctx.send(f"Step: {step} -> Score: {score}")
