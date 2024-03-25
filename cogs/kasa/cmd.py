@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from discord.ext import commands
 
@@ -57,7 +57,6 @@ class KasaCMD(KasaTasks):
         self,
         ctx: commands.Context,
         plug_id: commands.Range[int, 0, 6],
-        status: Optional[Literal["on", "off"]] = None,
+        status: Literal["on", "off"] | None = None,
     ):
-
         await ctx.send(await self.utils.toggle(plug_id, status))

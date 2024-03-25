@@ -1,9 +1,7 @@
-# -*- coding: utf8 -*-
 import datetime
 import logging
 import os
 import sys
-import time
 from logging.handlers import RotatingFileHandler
 
 FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d %(funcName)s - %(message)s"
@@ -25,9 +23,7 @@ class ColoredFormatter(logging.Formatter):
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
 
-    def __init__(
-        self, fmt=None, datefmt=None, style="%", validate=True, *, defaults=None
-    ):  # pylint: disable=too-many-arguments
+    def __init__(self, fmt=None, datefmt=None, style="%", validate=True, *, defaults=None):
         super().__init__(
             fmt=fmt, datefmt=datefmt, style=style, validate=validate, defaults=defaults
         )
@@ -80,7 +76,6 @@ def setup_package_logger(
     package_logger = logging.getLogger(package_name)
     package_logger.addHandler(console_handler)
     package_logger.addHandler(file_handler)
-    os.chmod(logfile_name, 0o777)
     return package_logger
 
 
@@ -91,9 +86,3 @@ if __name__ == "__main__":
     logger.warning("This is a warning message")
     logger.error("This is an error message")
     logger.critical("This is a critical message")
-    time.sleep(1)
-    print("Check the logs folder for the log files.")
-    time.sleep(1)
-    print("Press any key to exit.")
-    input()
-    sys.exit()

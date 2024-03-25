@@ -3,7 +3,6 @@ import json
 import os
 import re
 from textwrap import dedent
-from typing import Optional
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
@@ -13,13 +12,13 @@ from cogs import CogsExtension
 from core.models import Field
 from loggers import TZ, setup_package_logger
 
-from .const import API_URL, LEETCODE_USER_QUERY, THUMBNAIL_URL
+from .const import API_URL, THUMBNAIL_URL
 
 logger = setup_package_logger(__name__)
 
 if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
-with open("secret.json", "r", encoding='utf-8') as f:
+with open("secret.json", encoding="utf-8") as f:
     script = json.load(f)
     headers = script["headers"]
     cookies = script["cookies"]
@@ -34,10 +33,7 @@ difficulty_color = {
 
 
 class LeetCodeUtils(CogsExtension):
-
-    async def _send_request_to_leetcode_api(
-        self, operation: str, query: str = LEETCODE_USER_QUERY, **variables
-    ) -> dict:
+    async def _send_request_to_api(self, operation: str, query: str = "", **variables) -> dict:
         request_body = {
             "operationName": operation,
             "variables": variables,
@@ -45,28 +41,29 @@ class LeetCodeUtils(CogsExtension):
         }
         async with ClientSession() as session:
             async with session.post(
-                    API_URL, json=request_body, headers=headers, cookies=cookies) as resp:
+                API_URL, json=request_body, headers=headers, cookies=cookies
+            ) as resp:
                 try:
                     response = await resp.json()
                 except ContentTypeError as e:
                     logger.error("Error occurred: %s", e)
-                    raise ValueError(
-                        f"Error occurred while fetching data from LeetCode API, {(await resp.text())}"
-                    ) from e
+                    raise ValueError("Error occurred while fetching data from LeetCode API") from e
         return response
 
-    async def fetch_leetcode_user_info(self, username: str) -> dict:
+    async def fetch_user_info(self, username: str) -> dict:
+        with open("queries/profile_page.graphql", encoding="utf-8") as file:
+            user_query = file.read()
         operation_name = [
             re.match(r"^\s*query\s+([a-zA-Z]+)\s*\((.*)\)\s*{", line).group(1)
-            for line in LEETCODE_USER_QUERY.split("\n")
+            for line in user_query.split("\n")
             if re.match(r"^\s*query\s+([a-zA-Z]+)\s*\((.*)\)\s*{", line) is not None
         ]
 
         now = datetime.datetime.now(tz=TZ)
         response = {}
         for operation in operation_name:
-            operation_response = await self._send_request_to_leetcode_api(
-                operation, username=username, year=now.year, month=now.month, limit=1
+            operation_response = await self._send_request_to_api(
+                operation, user_query, username=username, year=now.year, month=now.month, limit=1
             )
 
             response[operation] = operation_response["data"]
@@ -77,12 +74,14 @@ class LeetCodeUtils(CogsExtension):
         """send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        return (await self._send_request_to_leetcode_api("questionOfToday"))["data"]
+        return (await self._send_request_to_api("questionOfToday"))["data"]
 
     async def fetch_leetcode_contest(self) -> list[dict]:
-        with open('queries/feed.graphql', 'r', encoding='utf-8') as file:
-            LEETCODE_CONTEST_QUERY = file.read()
-        return (await self._send_request_to_leetcode_api("upcomingContests", query=LEETCODE_CONTEST_QUERY))["data"]["upcomingContests"]
+        with open("queries/feed.graphql", encoding="utf-8") as file:
+            leetcode_contest_query = file.read()
+        return (await self._send_request_to_api("upcomingContests", query=leetcode_contest_query))[
+            "data"
+        ]["upcomingContests"]
 
 
 class LeetCodeResponseFormatter(CogsExtension):
@@ -93,18 +92,11 @@ class LeetCodeResponseFormatter(CogsExtension):
         thumbnail = matched_userprofile["userAvatar"]
         description = matched_userprofile["aboutMe"]
         # items
-        rating_info = (
-            response.get("userContestRankingInfo", dict()).get(
-                "userContestRanking", dict()
-            )
-            or dict()
-        )
-        solved_problems = response["userProblemsSolved"]["matchedUser"][
-            "submitStatsGlobal"
-        ]["acSubmissionNum"]
-        language_count = response["languageStats"]["matchedUser"][
-            "languageProblemCount"
+        rating_info = response.get("userContestRankingInfo", {}).get("userContestRanking", {}) or {}
+        solved_problems = response["userProblemsSolved"]["matchedUser"]["submitStatsGlobal"][
+            "acSubmissionNum"
         ]
+        language_count = response["languageStats"]["matchedUser"]["languageProblemCount"]
 
         # data processing
         language_count.sort(key=lambda x: x["problemsSolved"], reverse=True)
@@ -112,12 +104,20 @@ class LeetCodeResponseFormatter(CogsExtension):
         # Fields
         # ------------------------------------------------
         recent_AC_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
-        recent_AC = f'[{recent_AC_list[0]["title"]}](https://leetcode.com/problems/{recent_AC_list[0]["titleSlug"]})'
+        recent_AC = (
+            f'[{recent_AC_list[0]["title"]}]'
+            f'(https://leetcode.com/problems/{recent_AC_list[0]["titleSlug"]})'
+        )
+        rank_text = (
+            rating_info.get("globalRanking", "N/A")
+            + "/"
+            + rating_info.get("totalParticipants", "N/A")
+        )
         # ------------------------------------------------
         rating = dedent(
             f"""
             attempts: {rating_info.get('attendedContestsCount', 'N/A')}
-            Rank: {rating_info.get('globalRanking', 'N/A')}/{rating_info.get('totalParticipants', 'N/A')}
+            Rank: {rank_text}
             Rating: {rating_info.get('rating', 'N/A')}
             Top %: {rating_info.get('topPercentage', 0):.2f}%
             """
@@ -127,10 +127,7 @@ class LeetCodeResponseFormatter(CogsExtension):
             [f"{item['difficulty']}: {item['count']}" for item in solved_problems]
         )
         languages = "\n".join(
-            [
-                f"{item['languageName']}: {item['problemsSolved']}"
-                for item in language_count
-            ]
+            [f"{item['languageName']}: {item['problemsSolved']}" for item in language_count]
         )
         return await self.create_embed(
             matched_userprofile["realName"],
@@ -151,11 +148,9 @@ class LeetCodeResponseFormatter(CogsExtension):
         difficulty = question["difficulty"]
         color = difficulty_color[difficulty]
 
-        link = (
-            f"https://leetcode.com{response['activeDailyCodingChallengeQuestion']['link']}"
-        )
+        link = f"https://leetcode.com{response['activeDailyCodingChallengeQuestion']['link']}"
 
-        topic = ", ".join(map(lambda tag: tag["name"], question["topicTags"]))
+        topic = ", ".join([tag["name"] for tag in question["topicTags"]])
         ac_rate = f'{question["acRate"]:.2f}%'
 
         embed = await self.create_embed(
@@ -171,13 +166,13 @@ class LeetCodeResponseFormatter(CogsExtension):
         )
         return embed, title
 
-    async def contest(self, response: dict, only_today: bool = False) -> tuple[bool, Optional[discord.Embed]]:
-
+    async def contest(
+        self, response: dict, only_today: bool = False
+    ) -> tuple[bool, discord.Embed | None]:
         if only_today and await self.today_is_contest(response) is False:
             return False, None
 
-        start_time = datetime.datetime.fromtimestamp(
-            response["startTime"], tz=TZ)
+        start_time = datetime.datetime.fromtimestamp(response["startTime"], tz=TZ)
         title = description = response["title"]
         link = f'https://leetcode.com/contest/{response["titleSlug"]}/'
 
@@ -186,15 +181,18 @@ class LeetCodeResponseFormatter(CogsExtension):
             description,
             discord.Color.blurple(),
             link,
-            Field(name="Start Time", value=start_time.strftime(
-                "%Y-%m-%d %H:%M:%S"), inline=False),
+            Field(
+                name="Start Time",
+                value=start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                inline=False,
+            ),
             thumbnail_url=THUMBNAIL_URL,
         )
         return True, embed
 
-    async def contests(self,
-                       response: list[dict],
-                       only_today: bool = False) -> tuple[bool, list[discord.Embed]]:
+    async def contests(
+        self, response: list[dict], only_today: bool = False
+    ) -> tuple[bool, list[discord.Embed]]:
         embeds = []
         for contest in response:
             is_success, embed = await self.contest(contest, only_today)
@@ -203,6 +201,5 @@ class LeetCodeResponseFormatter(CogsExtension):
         return bool(embeds), embeds
 
     async def today_is_contest(self, contest: dict) -> bool:
-        start_time = datetime.datetime.fromtimestamp(
-            contest["startTime"], tz=TZ)
+        start_time = datetime.datetime.fromtimestamp(contest["startTime"], tz=TZ)
         return start_time.date() == datetime.datetime.now(tz=TZ).date()

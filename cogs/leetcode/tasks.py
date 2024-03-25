@@ -1,11 +1,10 @@
 import datetime
-import os
 
 from discord.ext import tasks
 
 from cogs import CogsExtension
 
-from .utils import LeetCodeUtils, LeetCodeResponseFormatter
+from .utils import LeetCodeResponseFormatter, LeetCodeUtils
 
 # variables
 daily_challenge_time = datetime.time(
@@ -31,7 +30,7 @@ class LeetCodeTasks(CogsExtension):
         self.utils = LeetCodeUtils(bot)
         self.formatter = LeetCodeResponseFormatter(bot)
 
-    def cog_load(self):
+    async def cog_load(self):
         self.fetch_leetcode_daily_challenge.start()
         self.fetch_leetcode_contest.start()
         self.biweekly_contest_start_reminder.start()
@@ -39,7 +38,7 @@ class LeetCodeTasks(CogsExtension):
         self.weekly_contest_start_reminder.start()
         self.weekly_contest_end_reminder.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.fetch_leetcode_daily_challenge.stop()
         self.fetch_leetcode_contest.stop()
         self.biweekly_contest_start_reminder.stop()
@@ -54,8 +53,9 @@ class LeetCodeTasks(CogsExtension):
         response = await self.utils.fetch_leetcode_daily_challenge()
         embed, title = await self.formatter.daily_challenge(response)
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}',
-                               embed=embed)
+            await channel.send(
+                f"@here\n :tada: **Daily LeetCode Challenge** :tada:  \n{title}", embed=embed
+            )
 
     @tasks.loop(time=daily_challenge_time)
     async def fetch_leetcode_contest(self):
@@ -65,8 +65,9 @@ class LeetCodeTasks(CogsExtension):
             return
 
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **Upcoming LeetCode Contest** :tada:  \n',
-                               embeds=embeds)
+            await channel.send(
+                "@here\n :tada: **Upcoming LeetCode Contest** :tada:  \n", embeds=embeds
+            )
 
     @tasks.loop(time=biweekly_contest_start_time)
     async def biweekly_contest_start_reminder(self):
@@ -80,7 +81,12 @@ class LeetCodeTasks(CogsExtension):
             return
 
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **This week of the Biweekly LeetCode Contest is started!** :tada:  \n')
+            await channel.send(
+                "@here\n"
+                ":tada:"
+                "**This week of the Biweekly LeetCode Contest is started!**"
+                ":tada:\n"
+            )
 
     @tasks.loop(time=biweekly_contest_end_time)
     async def biweekly_contest_end_reminder(self):
@@ -94,7 +100,12 @@ class LeetCodeTasks(CogsExtension):
             return
 
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **This week of the Biweekly LeetCode Contest will end in 15 minutes!** :tada:  \n')
+            await channel.send(
+                "@here\n"
+                ":tada:"
+                "**This week of the Biweekly LeetCode Contest will end in 15 minutes!**"
+                ":tada:\n"
+            )
 
     @tasks.loop(time=weekly_contest_start_time)
     async def weekly_contest_start_reminder(self):
@@ -108,7 +119,9 @@ class LeetCodeTasks(CogsExtension):
             return
 
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **This week of the weekly LeetCode Contest is started!** :tada:  \n')
+            await channel.send(
+                "@here\n :tada: **This week of the weekly LeetCode Contest is started!** :tada:  \n"
+            )
 
     @tasks.loop(time=weekly_contest_end_time)
     async def weekly_contest_end_reminder(self):
@@ -122,4 +135,9 @@ class LeetCodeTasks(CogsExtension):
             return
 
         for channel in self.bot.get_all_channels():
-            await channel.send(f'@here\n :tada: **This week of the weekly LeetCode Contest will end in 15 minutes!** :tada:  \n')
+            await channel.send(
+                "@here\n"
+                ":tada:"
+                "**This week of the weekly LeetCode Contest will end in 15 minutes!**"
+                ":tada:  \n"
+            )

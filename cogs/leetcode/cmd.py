@@ -1,5 +1,3 @@
-import os
-
 from discord.ext import commands
 
 from .tasks import LeetCodeTasks
@@ -16,7 +14,7 @@ class LeetCodeCMD(LeetCodeTasks):
     @leetcode.command("user")
     async def user(self, ctx: commands.Context, username: str):
         await ctx.interaction.response.defer()
-        user_info = await self.utils.fetch_leetcode_user_info(username)
+        user_info = await self.utils.fetch_user_info(username)
         embed = await self.formatter.user_info(user_info, username)
         await ctx.interaction.followup.send(embed=embed)
 
@@ -25,7 +23,7 @@ class LeetCodeCMD(LeetCodeTasks):
         await ctx.interaction.response.defer()
         response = await self.utils.fetch_leetcode_daily_challenge()
         embed, title = await self.formatter.daily_challenge(response)
-        await ctx.interaction.followup.send(f'Daily LeetCode Challenge: {title}', embed=embed)
+        await ctx.interaction.followup.send(f"Daily LeetCode Challenge: {title}", embed=embed)
 
     @leetcode.command("contest")
     async def contest(self, ctx: commands.Context, only_today: bool = False):
@@ -36,4 +34,4 @@ class LeetCodeCMD(LeetCodeTasks):
             await ctx.interaction.followup.send("No upcoming contest")
             return
 
-        await ctx.interaction.followup.send('Upcoming LeetCode Contest', embeds=embeds)
+        await ctx.interaction.followup.send("Upcoming LeetCode Contest", embeds=embeds)
