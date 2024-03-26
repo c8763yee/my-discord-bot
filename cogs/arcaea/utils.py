@@ -13,6 +13,7 @@ from .const import (
     BELOW_EX_SCORE_DELTA,
     DIFFICULTY_ABBR,
     DIFFICULTY_COLOR_LIST,
+    DIFFICULTY_LEN,
     DIFFICULTY_NAMES,
     EX_RATING_DELTA,
     EX_SCORE_DELTA,
@@ -318,7 +319,9 @@ class AssetFetcher:
 
         difficulty_name = (
             str(difficulty)
-            if song_data["difficulties"][difficulty].get("jacketOverride", False)
+            if song_data["difficulties"][3 if difficulty >= DIFFICULTY_LEN else difficulty].get(
+                "jacketOverride", False
+            )
             else "base"
         )
 
@@ -356,7 +359,7 @@ class ArcaeaResponseFormatter:
             Field(name="Score", value=result["score"], inline=False),
             Field(name="Grade", value=GRADE_NAMES[grade], inline=True),
             Field(name="Difficulty", value=DIFFICULTY_NAMES[difficulty], inline=True),
-            Field(name="Chart Constant", value=round(result["rating"], 1), inline=True),
+            Field(name="Chart Constant", value=round(result.get("rating", 0), 1), inline=True),
             color=Color.from_str(DIFFICULTY_COLOR_LIST[difficulty]),
             image_url=song_cover,
             thumbnail_url=(
