@@ -75,7 +75,6 @@ class LeetCodeTasks(CogsExtension):
         for contest in response:
             if contest["title"].startswith("Biweekly Contest"):
                 target_contest = contest
-                break
         if target_contest is None or ResponseFormatter.today_is_contest(target_contest) is False:
             return
 

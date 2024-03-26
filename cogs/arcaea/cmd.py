@@ -6,8 +6,14 @@ from dotenv import load_dotenv
 from cogs import CogsExtension
 from loggers import setup_package_logger
 
-from .utils import APIUtils, ArcaeaResponseFormatter
-
+from .utils import APIUtils, ArcaeaResponseFormatter, AssetFetcher
+from .const import (
+    DIFFICULTY_ABBR,
+    DIFFICULTY_COLOR,
+    DIFFICULTY_NAMES,
+    GRADE_NAMES,
+    GRADE_URL_SUFFIX,
+)
 if os.path.exists("env/arcaea.env"):
     load_dotenv("env/arcaea.env", override=True)
 

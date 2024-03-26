@@ -85,9 +85,9 @@ class LeetCodeUtils(CogsExtension):
     async def fetch_contest(self) -> list[dict]:
         with open("queries/feed.graphql", encoding="utf-8") as file:
             contest_query = file.read()
-        return (await self._send_request_to_api("upcomingContests", query=contest_query))["data"][
-            "upcomingContests"
-        ]
+            
+        response = await self._send_request_to_api("upcomingContests", query=contest_query)
+        return response["data"]["upcomingContests"]
 
 
 class ResponseFormatter:
@@ -110,10 +110,15 @@ class ResponseFormatter:
 
         # Fields
         # ------------------------------------------------
-        recent_ac_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
-        recent_ac = (
-            f'[{recent_ac_list[0]["title"]}]'
-            f'(https://leetcode.com/problems/{recent_ac_list[0]["titleSlug"]})'
+        recent_AC_list = response["recentAcSubmissions"]["recentAcSubmissionList"]
+        recent_AC = (
+            f'[{recent_AC_list[0]["title"]}]'
+            f'(https://leetcode.com/problems/{recent_AC_list[0]["titleSlug"]})'
+        )
+        rank_text = (
+            rating_info.get("globalRanking", "N/A")
+            + "/"
+            + rating_info.get("totalParticipants", "N/A")
         )
         rank_text = (
             str(rating_info.get("globalRanking", "N/A"))
@@ -139,7 +144,7 @@ class ResponseFormatter:
         return await CogsExtension.create_embed(
             matched_userprofile["realName"],
             description,
-            Field(name="Recent AC", value=recent_ac, inline=False),
+            Field(name="Recent AC", value=recent_AC, inline=False),
             Field(name="Rating", value=rating, inline=True),
             Field(name="Solved Count", value=solved_count, inline=True),
             Field(name="Languages", value=languages, inline=False),
@@ -151,8 +156,8 @@ class ResponseFormatter:
     @staticmethod
     async def daily_challenge(response: dict) -> tuple[discord.Embed, str]:
         question = response["activeDailyCodingChallengeQuestion"]["question"]
-        question_id = question["frontendQuestionId"]
-        title = f'{question_id}. {question["title"]}'
+        ID = question["frontendQuestionId"]
+        title = f'{ID}. {question["title"]}'
         difficulty = question["difficulty"]
         color = difficulty_color[difficulty]
 
@@ -170,7 +175,7 @@ class ResponseFormatter:
             Field(name="Acceptance Rate", value=ac_rate, inline=True),
             thumbnail_url=THUMBNAIL_URL,
             color=color,
-            url=link,
+            url=link
         )
         return embed, title
 
