@@ -25,7 +25,6 @@ class RaspberryPiTasks(CogsExtension):
     def __init__(self, bot):
         super().__init__(bot)
         self.utils = RaspberryPiUtils(bot)
-        self.formatter = StatsFormatter(bot)
 
     async def cog_load(self):
         self.get_stats.start()
@@ -37,5 +36,5 @@ class RaspberryPiTasks(CogsExtension):
     async def get_stats(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
         message = await self.utils.get_stats()
-        embed = await self.formatter.format_stats(message)
+        embed = await StatsFormatter.format_stats(message)
         await channel.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed, silent=True)

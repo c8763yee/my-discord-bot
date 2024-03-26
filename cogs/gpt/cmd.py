@@ -9,10 +9,6 @@ logger = setup_package_logger(__name__)
 
 
 class ChatGPTCMD(ChatGPTTasks):
-    def __init__(self, bot: commands.Bot):
-        super().__init__(bot)
-        self.formatter = ChatGPTResopnseFormatter(bot)
-
     @commands.hybrid_group(ephermal=True)
     async def chatgpt(self, ctx: commands.Context):
         """_description_
@@ -26,7 +22,7 @@ class ChatGPTCMD(ChatGPTTasks):
     async def ask(self, ctx: commands.Context, question: str):
         await ctx.interaction.response.defer()
         answer, usage = await self.utils.get_usage(question)
-        usage_embed = await self.formatter.get_usage(usage)
+        usage_embed = await ChatGPTResopnseFormatter.usage(usage)
         return await ctx.interaction.followup.send(answer, embed=usage_embed)
 
     @chatgpt.command("dalle")

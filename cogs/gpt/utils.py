@@ -119,9 +119,10 @@ class ChatGPTUtils(CogsExtension):
         return images[0].url
 
 
-class ChatGPTResopnseFormatter(ChatGPTUtils):
-    async def usage(self, usage: CompletionUsage) -> tuple[str, discord.Embed]:
-        usage_embed = await self.create_embed(
+class ChatGPTResopnseFormatter:
+    @classmethod
+    async def usage(cls, usage: CompletionUsage) -> tuple[str, discord.Embed]:
+        usage_embed = await CogsExtension.create_embed(
             "ChatGPT Usage Information",
             "In this response, the usage information of the ChatGPT API is included.",
             Field(name="completion_tokens", value=usage.completion_tokens),

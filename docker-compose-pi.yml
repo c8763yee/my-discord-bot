@@ -1,0 +1,19 @@
+services:
+  test_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: test_bot
+    container_name: test_bot
+    volumes:
+      - ./logs:/app/logs:rw
+      - /usr/bin:/usr/bin # Mount the /usr/bin directory
+    devices:
+      # Mount the /dev/vcio device for the Raspberry Pi
+      - /dev/vcio
+    networks:
+      - test_bot
+    user: user
+networks:
+  test_bot:
+    driver: bridge

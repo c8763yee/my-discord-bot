@@ -42,12 +42,11 @@ class ColoredFormatter(logging.Formatter):
 
 
 def setup_package_logger(
-    package_name, file_level=logging.INFO, console_level=logging.DEBUG
+    package_name: str, file_level=logging.INFO, console_level=logging.DEBUG
 ) -> logging.Logger:
     """_summary_
 
     Initialize the logger for the specified module.
-
     Args:
         package_name (str): The name of the package.
         file_level (int): The log level for the file handler.

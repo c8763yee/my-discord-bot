@@ -5,5 +5,9 @@
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
-    "ruff.fixAll": true
+    "ruff.fixAll": true,
+    "ruff.codeAction.fixViolation": {
+        "enable": true
+    },
+    "ruff.lint.run": "onSave"
 }
