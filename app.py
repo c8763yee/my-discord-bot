@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import datetime
-from io import StringIO
 from textwrap import dedent
 
 import discord
@@ -9,9 +8,7 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 import cogs
-from cogs import CogsExtension
 from cogs.arcaea.utils import APIUtils
-from core.models import Field
 from loggers import TZ, setup_package_logger
 
 if os.path.exists("env/bot.env"):
@@ -49,35 +46,6 @@ class Bot(commands.Bot):
         await channel.send(
             f"{self.user} is ready. <@{os.environ['OWNER_ID']}>",
             silent=True,
-        )
-
-    async def on_command_error(self, ctx: commands.Context, error):
-        """
-        response embed with error message
-        1. line number and character position
-        2. error message
-        3. error type
-        4. traceback
-        """
-        error_type = error.__class__.__name__
-        error_message = dedent(
-            f"""
-            Error Type: `{error_type}`
-            Error Message: `{error}`
-            """
-        )
-        error_file = StringIO(error_message)
-        embed = await CogsExtension.create_embed(
-            "Error occurred",
-            f"\n{error_type}",
-            Field(name="Error info", value=dedent(error_message), inline=False),
-            color=discord.Color.red(),
-        )
-        self.logger.exception(error)
-        await ctx.send(
-            embed=embed,
-            ephemeral=True,
-            file=discord.File(fp=error_file, filename="error.txt"),
         )
 
 
