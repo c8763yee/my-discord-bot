@@ -1,22 +1,12 @@
 import os
-from datetime import datetime
 
-from discord import Color
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from cogs import CogsExtension
-from core.models import Field
 from loggers import setup_package_logger
 
-from .const import (
-    DIFFICULTY_ABBR,
-    DIFFICULTY_COLOR,
-    DIFFICULTY_NAMES,
-    GRADE_NAMES,
-    GRADE_URL_SUFFIX,
-)
-from .utils import APIUtils, AssetFetcher
+from .utils import APIUtils, ArcaeaResponseFormatter
 
 if os.path.exists("env/arcaea.env"):
     load_dotenv("env/arcaea.env", override=True)
@@ -61,36 +51,8 @@ class ArcaeaCMD(CogsExtension):
     async def recent_score(self, ctx: commands.Context, user_code: str):
         await ctx.interaction.response.defer()
         result = await self.utils.fetch_recent(user_code)
+        embed, username = await ArcaeaResponseFormatter.recent_score(result)
 
-        song_id = result["song_id"]
-        difficulty = result["difficulty"]
-
-        song_cover = await AssetFetcher.song_cover(song_id, difficulty)
-        grade = await self.utils.get_grade(result["score"])
-
-        username = result["username"]
-        embed = await self.create_embed(
-            f"User: {username}\nRecent Play Info",
-            f"{result['title']['ja']} [{DIFFICULTY_ABBR[difficulty]}]「{GRADE_NAMES[grade]}」",
-            Field(
-                name="Played at",
-                value=datetime.fromtimestamp(result["time_played"] // 1000).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-                inline=False,
-            ),
-            Field(name="Rating", value=round(result["play_rating"], 2), inline=True),
-            Field(name="Score", value=result["score"], inline=False),
-            Field(name="Grade", value=GRADE_NAMES[grade], inline=True),
-            Field(name="Difficulty", value=DIFFICULTY_NAMES[difficulty], inline=True),
-            Field(name="Chart Constant", value=round(result["rating"], 1), inline=True),
-            color=Color.from_str(DIFFICULTY_COLOR[difficulty]),
-            image_url=song_cover,
-            thumbnail_url=(
-                f"https://moyoez.github.io/ArcaeaResource-ActionUpdater/"
-                f"arcaea/assets/img/grade/{GRADE_URL_SUFFIX[grade]}.png"
-            ),
-        )
         await ctx.interaction.followup.send(
             f"Recent play info for user **{username}**", embed=embed
         )

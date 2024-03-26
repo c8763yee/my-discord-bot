@@ -14,7 +14,6 @@ class RaspberryPiCMD(RaspberryPiTasks):
     def __init__(self, bot):
         super().__init__(bot)
         self.utils = RaspberryPiUtils(bot)
-        self.formatter = StatsFormatter(bot)
 
     @commands.hybrid_group(ephermal=True)
     async def pi(self, ctx: commands.Context):
@@ -34,5 +33,5 @@ class RaspberryPiCMD(RaspberryPiTasks):
     @pi.command("stats")
     async def stats(self, ctx: commands.Context):
         message = await self.utils.get_stats()
-        embed = await self.formatter.format_stats(message)
+        embed = await StatsFormatter.format_stats(message)
         await ctx.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed)

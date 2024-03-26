@@ -73,9 +73,10 @@ class RaspberryPiUtils(CogsExtension):
         return message
 
 
-class StatsFormatter(RaspberryPiUtils):
-    async def format_stats(self, stats: dict) -> Embed:
-        embed = await self.create_embed(
+class StatsFormatter:
+    @staticmethod
+    async def format_stats(stats: dict) -> Embed:
+        embed = await CogsExtension.create_embed(
             "Raspberry Pi Statistics",
             f'Current Time: {stats["now"]}',
             Field(name="CPU Usage", value=stats["cpu_usage"], inline=False),

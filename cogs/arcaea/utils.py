@@ -1,22 +1,32 @@
 import asyncio
+from datetime import datetime
 
 import aiohttp
+from discord import Color, Embed
 from requests import get
 
+from core.models import Field
 from loggers import setup_package_logger
 
-# fmt: off
+from .. import CogsExtension
 from .const import (
-    BELOW_EX_SCORE,
     BELOW_EX_SCORE_DELTA,
+    DIFFICULTY_ABBR,
+    DIFFICULTY_COLOR_LIST,
+    DIFFICULTY_NAMES,
     EX_RATING_DELTA,
-    EX_SCORE,
     EX_SCORE_DELTA,
+    GRADE_NAMES,
+    GRADE_URL_SUFFIX,
     PM_RATING_DELTA,
-    PM_SCORE,
+    Grade,
+    GradeScore,
 )
 
-# fmt: on
+UNAUTHORIZED = 401
+ERROR_START = 400
+ERROR_END = 600
+
 logger = setup_package_logger(__name__)
 
 headers = {
@@ -46,23 +56,24 @@ class ScoreUtils:
         diff_rating = user_rating - song_rating
 
         if diff_rating == PM_RATING_DELTA:
-            return PM_SCORE
+            return GradeScore.PM
 
         if diff_rating < EX_RATING_DELTA:
-            return max(int(BELOW_EX_SCORE + (diff_rating) * BELOW_EX_SCORE_DELTA), 0)
+            return max(int(GradeScore.BELOW_EX + (diff_rating) * BELOW_EX_SCORE_DELTA), 0)
 
-        return int(EX_SCORE + (diff_rating - EX_RATING_DELTA) * EX_SCORE_DELTA)
+        return int(GradeScore.EX + (diff_rating - EX_RATING_DELTA) * EX_SCORE_DELTA)
 
     async def score_to_rating(self, chart_rating: float, score: int) -> float:
-        if score >= PM_SCORE:
+        if score >= GradeScore.PM:
             return chart_rating + PM_RATING_DELTA
 
-        if score < EX_SCORE:
-            return max(chart_rating + (score - BELOW_EX_SCORE) / BELOW_EX_SCORE_DELTA, 0)
+        if score < GradeScore.EX:
+            return max(chart_rating + (score - GradeScore.BELOW_EX) / BELOW_EX_SCORE_DELTA, 0)
 
-        return chart_rating + EX_RATING_DELTA + (score - EX_SCORE) / EX_SCORE_DELTA
+        return chart_rating + EX_RATING_DELTA + (score - GradeScore.EX) / EX_SCORE_DELTA
 
-    async def get_grade(self, score: int) -> int:
+    @staticmethod
+    async def get_grade(score: int) -> int:
         """
         Get grade from score
         EX+: 9900000
@@ -72,18 +83,18 @@ class ScoreUtils:
         B: 8900000
         C: 8600000
         """
-        if score >= 9900000:
-            return 6
-        if score >= 9800000:
-            return 5
-        if score >= 9500000:
-            return 4
-        if score >= 9200000:
-            return 3
-        if score >= 8900000:
-            return 2
-        if score >= 8600000:
-            return 1
+        grades = [
+            (GradeScore.EX_PLUS, Grade.EX_PLUS),
+            (GradeScore.EX, Grade.EX),
+            (GradeScore.BELOW_EX, Grade.AA),
+            (GradeScore.A, Grade.A),
+            (GradeScore.B, Grade.B),
+            (GradeScore.C, Grade.C),
+        ]
+        for threshold, grade in grades:
+            if score >= threshold:
+                return grade
+
         return 0
 
 
@@ -136,11 +147,14 @@ class APIUtils(ScoreUtils):
         )
         async with self._session.get(songs_url, headers=headers) as response:
             result = await response.json()
-            if result["success"]:
-                for value in result["value"]:
-                    if value["user_id"] == user_id:
-                        value.update(song)
-                        return value
+            if result["success"] is False:
+                return result
+
+        for value in result["value"]:
+            if value["user_id"] == user_id:
+                value.update(song)
+                return value
+
         return result
 
     async def fetch_recent_play_info(self, user_id: int) -> dict:
@@ -149,10 +163,13 @@ class APIUtils(ScoreUtils):
         ) as response:
             result = await response.json()
 
-            if result["success"]:
-                for friend in result["value"]["friends"]:
-                    if friend["user_id"] == user_id:
-                        return friend["recent_score"][0]
+            if result["success"] is False:
+                return result
+
+        for friend in result["value"]["friends"]:
+            if friend["user_id"] == user_id:
+                return friend["recent_score"][0]
+
         return result
 
     async def add_friend(self, user_code: str) -> dict:
@@ -231,7 +248,7 @@ class APIUtils(ScoreUtils):
             username = resp["value"]["friends"][0]["name"]
             return user_id, username
 
-        if resp.get("error_code", 418) == 401:
+        if resp.get("error_code", 418) == UNAUTHORIZED:
             raise ValueError("User not found!")
 
         raise ValueError(f"Unknown error!,{resp}")
@@ -290,7 +307,7 @@ class AssetFetcher:
     async def send_request(cls, url: str) -> tuple[bool, str]:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
-                if 400 <= response.status < 600:
+                if ERROR_START <= response.status < ERROR_END:
                     return False, f"Error: {response.status}"
                 return True, await response.read()
 
@@ -313,3 +330,38 @@ class AssetFetcher:
                 return song_cover_url
 
         return f"{cls.base_url}/songs/{song_name}/base.jpg"
+
+
+class ArcaeaResponseFormatter:
+    @staticmethod
+    async def recent_score(result: dict) -> tuple[Embed, str]:
+        song_id = result["song_id"]
+        difficulty = result["difficulty"]
+
+        song_cover = await AssetFetcher.song_cover(song_id, difficulty)
+        grade = await ScoreUtils.get_grade(result["score"])
+
+        username = result["username"]
+        embed = await CogsExtension.create_embed(
+            f"User: {username}\nRecent Play Info",
+            f"{result['title']['ja']} [{DIFFICULTY_ABBR[difficulty]}]「{GRADE_NAMES[grade]}」",
+            Field(
+                name="Played at",
+                value=datetime.fromtimestamp(result["time_played"] // 1000).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+                inline=False,
+            ),
+            Field(name="Rating", value=round(result["play_rating"], 2), inline=True),
+            Field(name="Score", value=result["score"], inline=False),
+            Field(name="Grade", value=GRADE_NAMES[grade], inline=True),
+            Field(name="Difficulty", value=DIFFICULTY_NAMES[difficulty], inline=True),
+            Field(name="Chart Constant", value=round(result["rating"], 1), inline=True),
+            color=Color.from_str(DIFFICULTY_COLOR_LIST[difficulty]),
+            image_url=song_cover,
+            thumbnail_url=(
+                f"https://moyoez.github.io/ArcaeaResource-ActionUpdater/"
+                f"arcaea/assets/img/grade/{GRADE_URL_SUFFIX[grade]}.png"
+            ),
+        )
+        return embed, username
