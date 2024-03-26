@@ -8,7 +8,6 @@ from requests import get
 from core.models import Field
 from loggers import setup_package_logger
 
-
 from .. import CogsExtension
 from .const import (
     BELOW_EX_SCORE_DELTA,
