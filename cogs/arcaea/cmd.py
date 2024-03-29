@@ -50,15 +50,10 @@ class ArcaeaCMD(CogsExtension):
     @arcaea.command("recent")
     async def recent_score(self, ctx: commands.Context, user_code: str):
         await ctx.interaction.response.defer()
-        try:
-            result = await self.utils.fetch_recent(user_code)
-            embed, username = await ArcaeaResponseFormatter.recent_score(result)
 
-            await ctx.interaction.followup.send(
-                f"Recent play info for user **{username}**", embed=embed
-            )
-        except Exception as e:
-            logger.exception(e)
-            await ctx.interaction.followup.send(
-                f"An error occured while fetching data\n{result}", username="sus"
-            )
+        result = await self.utils.fetch_recent(user_code)
+        embed, username = await ArcaeaResponseFormatter.recent_score(result)
+
+        await ctx.interaction.followup.send(
+            f"Recent play info for user **{username}**", embed=embed
+        )

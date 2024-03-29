@@ -15,6 +15,8 @@ if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
 
 logger = setup_package_logger("main", file_level=logging.INFO)
+setup_package_logger("discord", file_level=logging.INFO, console_level=logging.DEBUG)
+logging.getLogger("discord.http").setLevel(logging.INFO)
 
 
 @tasks.loop(minutes=1)
@@ -56,7 +58,6 @@ bot = Bot(
     help_command=commands.DefaultHelpCommand(dm_help=True),
     description="A bot for my Discord server.",
 )
-logging.getLogger("discord.http").setLevel(logging.INFO)
 
 
 @bot.hybrid_command()
