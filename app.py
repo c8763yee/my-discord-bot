@@ -12,7 +12,7 @@ from cogs.arcaea.utils import APIUtils
 from loggers import TZ, setup_package_logger
 
 if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
+    load_dotenv(dotenv_path="env/bot.env", verbose=True)
 
 logger = setup_package_logger("main", file_level=logging.INFO)
 setup_package_logger("discord", file_level=logging.INFO, console_level=logging.DEBUG)
