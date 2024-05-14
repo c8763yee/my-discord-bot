@@ -10,7 +10,9 @@ __all__ = ("leetcode", "pi", "kasa", "gpt", "arcaea")
 class CogsExtension(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.logger = setup_package_logger(__name__)
+        self.logger = setup_package_logger(
+            getattr(self.__class__, "__qualname__", self.__class__.__name__)
+        )
 
     @classmethod
     async def create_embed(cls, title: str, description: str, *fields: Field, **kwargs):

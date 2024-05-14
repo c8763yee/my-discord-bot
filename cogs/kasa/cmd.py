@@ -2,12 +2,8 @@ from typing import Literal
 
 from discord.ext import commands
 
-from loggers import setup_package_logger
-
 from .tasks import KasaTasks
 from .utils import KasaResponseFormatter
-
-logger = setup_package_logger(__name__)
 
 
 class KasaCMD(KasaTasks):

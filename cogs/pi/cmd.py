@@ -2,12 +2,8 @@ import os
 
 from discord.ext import commands
 
-from loggers import setup_package_logger
-
 from .tasks import RaspberryPiTasks
 from .utils import RaspberryPiUtils, StatsFormatter
-
-logger = setup_package_logger(__name__)
 
 
 class RaspberryPiCMD(RaspberryPiTasks):

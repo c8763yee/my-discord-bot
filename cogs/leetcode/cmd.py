@@ -1,11 +1,7 @@
 from discord.ext import commands
 
-from loggers import setup_package_logger
-
 from .tasks import LeetCodeTasks
 from .utils import ResponseFormatter
-
-logger = setup_package_logger(__name__)
 
 
 class LeetCodeCMD(LeetCodeTasks):
