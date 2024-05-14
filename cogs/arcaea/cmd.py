@@ -4,14 +4,11 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 from cogs import CogsExtension
-from loggers import setup_package_logger
 
 from .utils import APIUtils, ArcaeaResponseFormatter
 
 if os.path.exists("env/arcaea.env"):
-    load_dotenv("env/arcaea.env", override=True)
-
-logger = setup_package_logger(__name__)
+    load_dotenv("env/arcaea.env")
 
 
 class ArcaeaCMD(CogsExtension):
@@ -52,8 +49,8 @@ class ArcaeaCMD(CogsExtension):
         await ctx.interaction.response.defer()
 
         result = await self.utils.fetch_recent(user_code)
-        embed, username = await ArcaeaResponseFormatter.recent_score(result)
+        embed, username, *files = await ArcaeaResponseFormatter.recent_score(result)
 
         await ctx.interaction.followup.send(
-            f"Recent play info for user **{username}**", embed=embed
+            f"Recent play info for user **{username}**", embed=embed, files=files
         )

@@ -1,9 +1,12 @@
 import asyncio
+import io
+import os
 from datetime import datetime
+from http import HTTPStatus
 
 import aiohttp
-from discord import Color, Embed
-from requests import get
+from discord import Color, Embed, File
+from requests import Response, get
 
 from core.models import Field
 from loggers import setup_package_logger
@@ -18,17 +21,11 @@ from .const import (
     EX_RATING_DELTA,
     EX_SCORE_DELTA,
     GRADE_NAMES,
-    GRADE_URL_SUFFIX,
+    GRADE_SUFFIX,
     PM_RATING_DELTA,
     Grade,
     GradeScore,
 )
-
-UNAUTHORIZED = 401
-ERROR_START = 400
-ERROR_END = 600
-
-logger = setup_package_logger(__name__)
 
 headers = {
     "User-Agent": (
@@ -249,7 +246,7 @@ class APIUtils(ScoreUtils):
             username = resp["value"]["friends"][0]["name"]
             return user_id, username
 
-        if resp.get("error_code", 418) == UNAUTHORIZED:
+        if resp.get("error_code", HTTPStatus.UNAUTHORIZED) == HTTPStatus.UNAUTHORIZED:
             raise ValueError("User not found!")
 
         raise ValueError(f"Unknown error!,{resp}")
@@ -300,20 +297,30 @@ class APIUtils(ScoreUtils):
 
 
 class AssetFetcher:
-    base_url = "https://moyoez.github.io/ArcaeaResource-ActionUpdater/arcaea/assets"
-    songlist = get(f"{base_url}/songs/songlist", timeout=20)
+    BASE_URL = f"http://{os.environ.get('FILE_API_URL', 'localhost')}:8000/arcaea/assets"
+    songlist: Response = get(f"{BASE_URL}/songs/songlist", timeout=20)
     songlist_map = {song["id"]: song for song in songlist.json()["songs"]}
+    logger = setup_package_logger(__name__)
 
     @classmethod
     async def send_request(cls, url: str) -> tuple[bool, str]:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
-                if ERROR_START <= response.status < ERROR_END:
-                    return False, f"Error: {response.status}"
+                if response.status != HTTPStatus.OK:
+                    return False, f"Error: {response.status}, {response.reason}"
                 return True, await response.read()
 
     @classmethod
-    async def song_cover(cls, song_id: int, difficulty: int) -> str:
+    async def get_thumbnail(cls, grade: int) -> File:
+        is_success, thumbnail_bytes = await cls.send_request(
+            f"{cls.BASE_URL}/img/grade/{GRADE_SUFFIX[grade]}.png"
+        )
+        if is_success:
+            return File(io.BytesIO(thumbnail_bytes), filename=f"{GRADE_SUFFIX[grade]}.png")
+        raise ValueError("Thumbnail not found: %s", thumbnail_bytes[:1000])
+
+    @classmethod
+    async def get_song_cover(cls, song_id: int, difficulty: int) -> File:
         song_data = cls.songlist_map[song_id]
         song_name = f"dl_{song_id}" if song_data.get("remote_dl", False) else song_id
 
@@ -327,22 +334,35 @@ class AssetFetcher:
 
         for prefix in ["1080_", ""]:
             filename = f"{prefix}{difficulty_name}.jpg"
-            song_cover_url = f"{cls.base_url}/songs/{song_name}/{filename}"
-            success, _ = await cls.send_request(song_cover_url)
+            song_cover_url = f"{cls.BASE_URL}/songs/{song_name}/{filename}"
+            cls.logger.debug("Trying to fetch: %s", song_cover_url)
+            success, cover = await cls.send_request(song_cover_url)
             if success:
-                return song_cover_url
+                return File(io.BytesIO(cover), filename=f"{song_name}_{difficulty_name}.jpg")
 
-        return f"{cls.base_url}/songs/{song_name}/base.jpg"
+        # return base cover if no cover found
+        song_cover_url = f"{cls.BASE_URL}/songs/{song_name}/base.jpg"
+        success, cover = await cls.send_request(song_cover_url)
+        if success:
+            return File(io.BytesIO(cover), filename=f"{song_name}.jpg")
+        else:
+            raise ValueError("Thumbnail not found: %s", cover[:1000])
+
+        # return base cover if no cover found
 
 
 class ArcaeaResponseFormatter:
     @staticmethod
-    async def recent_score(result: dict) -> tuple[Embed, str]:
+    async def recent_score(result: dict) -> tuple[Embed, str, File, File]:
         song_id = result["song_id"]
         difficulty = result["difficulty"]
 
-        song_cover = await AssetFetcher.song_cover(song_id, difficulty)
+        song_cover = await AssetFetcher.get_song_cover(song_id, difficulty)
         grade = await ScoreUtils.get_grade(result["score"])
+        thumbnail: File = await AssetFetcher.get_thumbnail(grade)
+
+        rating_val = round(result["play_rating"], 2)
+        rating = str(rating_val) if rating_val > 0 else "Too low to calculate"
 
         username = result["username"]
         embed = await CogsExtension.create_embed(
@@ -355,16 +375,13 @@ class ArcaeaResponseFormatter:
                 ),
                 inline=False,
             ),
-            Field(name="Rating", value=round(result["play_rating"], 2), inline=True),
+            Field(name="Rating", value=rating, inline=True),
             Field(name="Score", value=result["score"], inline=False),
             Field(name="Grade", value=GRADE_NAMES[grade], inline=True),
             Field(name="Difficulty", value=DIFFICULTY_NAMES[difficulty], inline=True),
             Field(name="Chart Constant", value=round(result.get("rating", 0), 1), inline=True),
             color=Color.from_str(DIFFICULTY_COLOR_LIST[difficulty]),
-            image_url=song_cover,
-            thumbnail_url=(
-                f"https://moyoez.github.io/ArcaeaResource-ActionUpdater/"
-                f"arcaea/assets/img/grade/{GRADE_URL_SUFFIX[grade]}.png"
-            ),
+            image_url=f"attachment://{song_cover.filename}",
+            thumbnail_url=f"attachment://{thumbnail.filename}",
         )
-        return embed, username
+        return embed, username, thumbnail, song_cover
