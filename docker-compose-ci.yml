@@ -6,7 +6,8 @@ services:
     image: bot
     container_name: bot
     networks:
-      - bot
+      bot:
+        ipv4_address: 172.18.0.2
     volumes:
       - ./logs:/app/logs:rw
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
@@ -23,8 +24,26 @@ services:
       - MQTT_BROKER=${MQTT_BROKER}
       - ARCAEA_EMAIL=${ARCAEA_EMAIL}
       - ARCAEA_PASSWORD=${ARCAEA_PASSWORD}
+      - FILE_API_URL=172.18.0.3
     restart: on-failure:10
+    depends_on:
+      - file_api
+  file_api:
+    build:
+      context: api
+      dockerfile: Dockerfile
+    image: file_api
+    container_name: file_api
+    networks:
+      bot_net:
+        ipv4_address: 172.18.0.3
+    volumes:
+      - /opt/arcaea/assets:/opt/arcaea/assets
 
 networks:
   bot:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16

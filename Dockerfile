@@ -6,8 +6,7 @@ RUN apt-get update -y && \
     apt-get clean && \
     pip install --no-cache-dir -r /tmp/requirements.txt && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    useradd -m user && \
-    usermod -aG sudo user && \
+    useradd -mG sudo user && \
     echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 
