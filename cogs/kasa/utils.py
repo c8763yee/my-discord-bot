@@ -7,16 +7,12 @@ from aiomqtt import Client
 from dotenv import load_dotenv
 
 from cogs import CogsExtension
-from loggers import setup_package_logger
 
 if os.path.exists("env/mqtt.env"):
-    load_dotenv("env/mqtt.env", verbose=True, override=True)
+    load_dotenv("env/mqtt.env", verbose=True)
 
 MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))
-
-
-logger = setup_package_logger(__name__)
 
 
 class KasaUtils(CogsExtension):

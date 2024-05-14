@@ -10,14 +10,12 @@ from dotenv import load_dotenv
 
 from cogs import CogsExtension
 from core.models import Field
-from loggers import TZ, setup_package_logger
+from loggers import TZ
 
 from .const import API_URL, THUMBNAIL_URL
 
-logger = setup_package_logger(__name__)
-
 if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True, override=True)
+    load_dotenv(dotenv_path="env/bot.env", verbose=True)
 with open("secret.json", encoding="utf-8") as f:
     script = json.load(f)
     headers = script["headers"]
@@ -46,7 +44,7 @@ class LeetCodeUtils(CogsExtension):
                 try:
                     response = await resp.json()
                 except ContentTypeError as exc:
-                    logger.error("Error occurred: %s", exc)
+                    self.logger.error("Error occurred: %s", exc)
                     raise ValueError(
                         "Error occurred while fetching data from LeetCode API"
                     ) from exc

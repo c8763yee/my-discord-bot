@@ -3,8 +3,17 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
+from textwrap import dedent
 
-FORMAT_PATTERN = "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d %(funcName)s - %(message)s"
+FORMAT_PATTERN = dedent("""
+               [%(levelname)s] at %(asctime)s
+               Module: %(module)s
+               Function:%(funcName)s:%(lineno)d
+               --------------------- Message ---------------------
+               %(message)s
+               ----------------------------------------------------
+               """)
+
 
 logging.basicConfig(level=logging.NOTSET, handlers=None)
 TZ = datetime.timezone(datetime.timedelta(hours=8))
@@ -76,12 +85,3 @@ def setup_package_logger(
     package_logger.addHandler(console_handler)
     package_logger.addHandler(file_handler)
     return package_logger
-
-
-if __name__ == "__main__":
-    logger = setup_package_logger("a.b.c", file_level=logging.DEBUG)
-    logger.debug("This is a debug message")
-    logger.info("This is an info message")
-    logger.warning("This is a warning message")
-    logger.error("This is an error message")
-    logger.critical("This is a critical message")

@@ -7,11 +7,9 @@ from discord import Color, Embed
 
 from cogs import CogsExtension
 from core.models import Field
-from loggers import TZ, setup_package_logger
+from loggers import TZ
 
 from .const import REBOOT_TEMPERATURE, TEMPERATURE_COMMAND, WARNING_TEMPERATURE
-
-logger = setup_package_logger(__name__)
 
 
 class RaspberryPiUtils(CogsExtension):
