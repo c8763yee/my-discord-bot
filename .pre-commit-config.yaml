@@ -16,4 +16,5 @@ repos:
       - id: ruff
         args:
           - --fix
+          - --verbose
       - id: ruff-format

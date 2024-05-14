@@ -10,8 +10,6 @@ from config import OpenAIConfig
 from core.models import Field
 from loggers import setup_package_logger
 
-from . import const
-
 
 class ChatGPT:
     """
@@ -30,10 +28,10 @@ class ChatGPT:
     }
 
     client = openai.AsyncOpenAI()
-    logger = setup_package_logger(__name__)
 
     def __init__(self):
         self._history = [self.behavior]
+        self.logger = setup_package_logger(__name__)
 
     @classmethod
     async def detect_malicious_content(cls, prompt: str) -> bool:
@@ -45,14 +43,13 @@ class ChatGPT:
             cate is True for cate in result.categories.model_dump().values()
         )
 
-    async def send_message(
+    async def _send_message(
         self,
-        max_tokens: int = const.MAX_TOKENS,
-        model: str = const.CHAT_MODEL,
+        max_tokens: int = OpenAIConfig.MAX_TOKENS,
         **kwargs,
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
-            messages=self._history, max_tokens=max_tokens, model=model, **kwargs
+            messages=self._history, max_tokens=max_tokens, **kwargs
         )
         return response
 
@@ -61,16 +58,16 @@ class ChatGPT:
             raise ValueError("This Prompt contains malicious content")
 
         self._history.append({"role": "user", "content": prompt})
-        response = await self.send_message(**open_kwargs)
+        response = await self._send_message(**open_kwargs)
         return response.choices[0].message.content, response.usage
 
     @classmethod
     async def create_images(
         cls,
         prompt: str,
-        model: str = const.DALL_E_MODEL,
-        quality: str = const.IMAGE_QUALITY,
-        size: str = const.IMAGE_SIZE,
+        model: str,
+        quality: str = OpenAIConfig.IMAGE_QUALITY,
+        size: str = OpenAIConfig.IMAGE_SIZE,
     ) -> list[Image]:
         if await cls.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
@@ -80,43 +77,40 @@ class ChatGPT:
         )
         return results.data
 
-    async def vision(self, text: str, images_b64: str):
+    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
         """
         returns the response from the vision model
         Args:
             text: the prompt to the model
             image_text: the base64 encoded image
         """
-        if self.detect_malicious_content(text):
+        if await self.detect_malicious_content(text):
             raise ValueError("This Prompt contains malicious content")
 
-        vision_prompt = [{"type": "text", "text": text}]
-        for image_b64 in images_b64:
-            image_url = f"data:image/png;base64,{image_b64}"
-            vision_prompt.append(
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": (image_url),
-                        "detail": OpenAIConfig.VISION_DETAIL,
-                    },
-                }
-            )
-        vision_response, usage = await self.ask(vision_prompt, model="gpt-4-vision-preview")
-        # filter out the markdown syntax from the response
-        return vision_response, usage
+        vision_prompt = [
+            {
+                "type": "image_url",
+                "image_url": {"url": image_url, "detail": OpenAIConfig.VISION_DETAIL},
+            },
+            {"type": "text", "text": text},
+        ]
+        return await self.ask(vision_prompt, model="gpt-4o")
 
 
 class ChatGPTUtils(CogsExtension):
-    async def get_usage(self, question: str) -> str:
+    async def ask(self, question: str, model: str) -> str:
         chatbot = ChatGPT()
-        answer, token_usage = await chatbot.ask(question)
+        answer, token_usage = await chatbot.ask(question, model=model)
         return answer, token_usage
 
-    async def generate_image(self, prompt: str) -> str:
+    async def generate_image(self, prompt: str, model: str) -> str:
         chatbot = ChatGPT()
-        images = await chatbot.create_images(prompt)
+        images = await chatbot.create_images(prompt, model=model)
         return images[0].url
+
+    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
+        chatbot = ChatGPT()
+        return await chatbot.vision(text, image_url)
 
 
 class ChatGPTResopnseFormatter:
