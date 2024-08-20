@@ -31,7 +31,7 @@ class LeetCodeCMD(LeetCodeTasks):
         await ctx.interaction.response.defer()
 
         response = await self.utils.fetch_contest()
-        is_success, embeds = await ResponseFormatter.contests(response, only_today)
+        is_success, embeds = await ResponseFormatter.parse_contests(response, only_today)
 
         if is_success is False:
             await ctx.interaction.followup.send("No upcoming contest")
