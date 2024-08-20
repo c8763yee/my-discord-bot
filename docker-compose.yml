@@ -8,25 +8,16 @@ services:
     volumes:
       - ./logs:/app/logs:rw
       - /opt/arcaea/assets:/opt/arcaea/assets
+      - /home/c8763yee/mygo-anime:/home/user/mygo-anime
+
     networks:
       test_bot_net:
         ipv4_address: 172.18.0.2
     user: user
     environment:
       - FILE_API_URL=172.18.0.3
-    depends_on:
-      - file_api
-    restart: on-failure:10
 
-  file_api:
-    build:
-      context: api
-      dockerfile: Dockerfile
-    image: file_api
-    container_name: file_api
-    networks:
-      test_bot_net:
-        ipv4_address: 172.18.0.3
+    restart: on-failure:10
 
 networks:
   test_bot_net:
