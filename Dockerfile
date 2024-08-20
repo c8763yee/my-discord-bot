@@ -2,7 +2,17 @@ FROM python:3.10-slim
 COPY requirements.txt /tmp
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y -q \
-    git libpq-dev python3-dev build-essential libsnappy-dev sudo && \
+    libpq-dev python3-dev build-essential libsnappy-dev sudo \
+        ca-certificates \
+        cmake \
+        git \
+        apt-utils \
+        libass-dev \
+        libmp3lame-dev \
+        libomxil-bellagio-dev \
+        libvpx-dev \
+        libx264-dev \
+        libx265-dev && \
     apt-get clean && \
     pip install --no-cache-dir -r /tmp/requirements.txt && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
