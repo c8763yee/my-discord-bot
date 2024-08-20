@@ -1,39 +1,29 @@
 import logging
 import os
-from datetime import datetime
+from pathlib import Path
 from textwrap import dedent
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
+from sqlmodel import SQLModel
 
 import cogs
 from cogs.arcaea.utils import APIUtils
-from loggers import TZ, setup_package_logger
+from cogs.mygo.schema import SubtitleItem, engine
+from core.func import db_insert_episode, db_insert_subtitle_data, init_models
+from loggers import setup_package_logger
 
 if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True)
 
 logger = setup_package_logger("main", file_level=logging.INFO)
-setup_package_logger("discord", file_level=logging.INFO, console_level=logging.DEBUG)
-logging.getLogger("discord.http").setLevel(logging.INFO)
-
-
-@tasks.loop(minutes=1)
-async def update_time():
-    now = datetime.now(tz=TZ)
-    await bot.change_presence(
-        activity=discord.CustomActivity(
-            name=f'現在時間: {now.strftime("%Y-%m-%d %H:%M")}',
-            emoji=discord.PartialEmoji(name="🕒"),
-        )
-    )
 
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger: logging.Logger = setup_package_logger(__name__, file_level=logging.INFO)
+        self.logger: logging.Logger = setup_package_logger("main.bot", file_level=logging.INFO)
 
     async def on_ready(self):
         channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
@@ -42,13 +32,25 @@ class Bot(commands.Bot):
             await self.load_extension(f"cogs.{modules}")
             await channel.send(f"`{modules}` loaded", silent=True)
 
-        update_time.start()
         await self.tree.sync()
+        async with engine.begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
+
         # mention owner when ready
         await channel.send(
             f"{self.user} is ready. <@{os.environ['OWNER_ID']}>",
             silent=True,
         )
+
+        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as f:
+            data = SubtitleItem.model_validate_json(f.read())
+
+        await init_models()
+
+        for episode in ["1-3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]:
+            await db_insert_episode(episode)
+
+        await db_insert_subtitle_data(data)
 
 
 # ---------------------------- Initialising the bot ---------------------------- #
