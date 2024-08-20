@@ -18,3 +18,8 @@ repos:
           - --fix
           - --verbose
       - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
