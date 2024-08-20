@@ -1,12 +1,11 @@
 import asyncio
-import io
-import os
+import json
 from datetime import datetime
 from http import HTTPStatus
+from pathlib import Path
 
 import aiohttp
 from discord import Color, Embed, File
-from requests import Response, get
 
 from core.models import Field
 from loggers import setup_package_logger
@@ -16,16 +15,17 @@ from .const import (
     BELOW_EX_SCORE_DELTA,
     DIFFICULTY_ABBR,
     DIFFICULTY_COLOR_LIST,
-    DIFFICULTY_LEN,
     DIFFICULTY_NAMES,
     EX_RATING_DELTA,
     EX_SCORE_DELTA,
     GRADE_NAMES,
     GRADE_SUFFIX,
+    MAX_DIFFICULTY,
     PM_RATING_DELTA,
-    Grade,
-    GradeScore,
+    GradeEnum,
+    GradeScoreEnum,
 )
+from .schema import Song, SongList
 
 headers = {
     "User-Agent": (
@@ -48,27 +48,41 @@ class ScoreUtils:
         return ((50 / char_step * world_step - 2.5) / 2.45) ** 2
 
     async def rating_to_step(self, char_step: int, rating: float) -> float:
+        r"""# Calculation
+        The amount of steps gained after playing a song depends on several factors:.
+
+            - Play Rating
+            - Selected Partner's STEP stat
+            - Partner skill
+            - Mobile only: Boost multipliers (Memory boost, Legacy Play+ Fragment/stamina boosts)
+
+        It can be calculated using:
+
+        {\\displaystyle {\text{Steps Gained}}=
+        \\overbrace {\\left(2.45{\\sqrt {\text{Play Rating}}}+2.5\right)} ^{\text{Play Result}}\
+        \times {\\dfrac {\text{STEP Stat}}{50}}+{\text{Partner Step Bonuses}}\\,.}
+        """
         return char_step / 50 * (2.5 + 2.45 * rating**0.5)
 
     async def rating_to_score(self, user_rating: float, song_rating: float) -> int:
         diff_rating = user_rating - song_rating
 
         if diff_rating == PM_RATING_DELTA:
-            return GradeScore.PM
+            return GradeScoreEnum.PM
 
         if diff_rating < EX_RATING_DELTA:
-            return max(int(GradeScore.BELOW_EX + (diff_rating) * BELOW_EX_SCORE_DELTA), 0)
+            return max(int(GradeScoreEnum.BELOW_EX + (diff_rating) * BELOW_EX_SCORE_DELTA), 0)
 
-        return int(GradeScore.EX + (diff_rating - EX_RATING_DELTA) * EX_SCORE_DELTA)
+        return int(GradeScoreEnum.EX + (diff_rating - EX_RATING_DELTA) * EX_SCORE_DELTA)
 
     async def score_to_rating(self, chart_rating: float, score: int) -> float:
-        if score >= GradeScore.PM:
+        if score >= GradeScoreEnum.PM:
             return chart_rating + PM_RATING_DELTA
 
-        if score < GradeScore.EX:
-            return max(chart_rating + (score - GradeScore.BELOW_EX) / BELOW_EX_SCORE_DELTA, 0)
+        if score < GradeScoreEnum.EX:
+            return max(chart_rating + (score - GradeScoreEnum.BELOW_EX) / BELOW_EX_SCORE_DELTA, 0)
 
-        return chart_rating + EX_RATING_DELTA + (score - GradeScore.EX) / EX_SCORE_DELTA
+        return chart_rating + EX_RATING_DELTA + (score - GradeScoreEnum.EX) / EX_SCORE_DELTA
 
     @staticmethod
     async def get_grade(score: int) -> int:
@@ -81,12 +95,12 @@ class ScoreUtils:
         C: 8600000.
         """
         grades = [
-            (GradeScore.EX_PLUS, Grade.EX_PLUS),
-            (GradeScore.EX, Grade.EX),
-            (GradeScore.BELOW_EX, Grade.AA),
-            (GradeScore.A, Grade.A),
-            (GradeScore.B, Grade.B),
-            (GradeScore.C, Grade.C),
+            (GradeScoreEnum.EX_PLUS, GradeEnum.EX_PLUS),
+            (GradeScoreEnum.EX, GradeEnum.EX),
+            (GradeScoreEnum.BELOW_EX, GradeEnum.AA),
+            (GradeScoreEnum.A, GradeEnum.A),
+            (GradeScoreEnum.B, GradeEnum.B),
+            (GradeScoreEnum.C, GradeEnum.C),
         ]
         for threshold, grade in grades:
             if score >= threshold:
@@ -296,58 +310,48 @@ class APIUtils(ScoreUtils):
 
 
 class AssetFetcher:
-    BASE_URL = f"http://{os.environ.get('FILE_API_URL', 'localhost')}:8000/arcaea/assets"
-    songlist: Response = get(f"{BASE_URL}/songs/songlist", timeout=20)
-    songlist_map = {song["id"]: song for song in songlist.json()["songs"]}
-    logger = setup_package_logger(__name__)
+    ROOT_PATH = Path("/opt/arcaea/assets")
+    with open(ROOT_PATH / "songs" / "songlist") as songlist:
+        songlist = SongList.model_validate(json.load(songlist))
 
-    @classmethod
-    async def send_request(cls, url: str) -> tuple[bool, str]:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status != HTTPStatus.OK:
-                    return False, f"Error: {response.status}, {response.reason}"
-                return True, await response.read()
+    songlist_map = {song.id: song for song in songlist.songs}
 
     @classmethod
     async def get_thumbnail(cls, grade: int) -> File:
-        is_success, thumbnail_bytes = await cls.send_request(
-            f"{cls.BASE_URL}/img/grade/{GRADE_SUFFIX[grade]}.png"
-        )
-        if is_success:
-            return File(io.BytesIO(thumbnail_bytes), filename=f"{GRADE_SUFFIX[grade]}.png")
-        raise ValueError("Thumbnail not found: %s", thumbnail_bytes[:1000])
+        thumbnail_path = cls.ROOT_PATH / "img" / "grade" / f"{GRADE_SUFFIX[grade]}.png"
+        if thumbnail_path.exists() is False:
+            cls.logger.error("Thumbnail not found: %s", thumbnail_path)
+            raise ValueError("Thumbnail not found: %s", thumbnail_path)
+
+        return File(thumbnail_path)
 
     @classmethod
     async def get_song_cover(cls, song_id: int, difficulty: int) -> File:
-        song_data = cls.songlist_map[song_id]
-        song_name = f"dl_{song_id}" if song_data.get("remote_dl", False) else song_id
+        song_data: Song = cls.songlist_map[song_id]
+        song_name = f"dl_{song_id}" if song_data.remote_dl is True else song_id
 
         difficulty_name = (
             str(difficulty)
-            if song_data["difficulties"][3 if difficulty >= DIFFICULTY_LEN else difficulty].get(
-                "jacketOverride", False
-            )
+            if song_data.difficulties[min(difficulty, MAX_DIFFICULTY - 1)].jacketOverride is True
+            # minus 1 because BEYOND and ETERNAL can not be at the same time
             else "base"
         )
 
         for prefix in ["1080_", ""]:
-            filename = f"{prefix}{difficulty_name}.jpg"
-            song_cover_url = f"{cls.BASE_URL}/songs/{song_name}/{filename}"
-            cls.logger.debug("Trying to fetch: %s", song_cover_url)
-            success, cover = await cls.send_request(song_cover_url)
-            if success:
-                return File(io.BytesIO(cover), filename=f"{song_name}_{difficulty_name}.jpg")
+            song_cover_path = cls.ROOT_PATH / "songs" / song_name / f"{prefix}{difficulty_name}.jpg"
+            cls.logger.debug("Trying to fetch: %s", song_cover_path)
+            # success, cover = await cls.send_request(song_cover_url)
+            # if success:
+            #     return File(io.BytesIO(cover), filename=f"{song_name}_{difficulty_name}.jpg")
+            if song_cover_path.exists():
+                return File(song_cover_path)
 
         # return base cover if no cover found
-        song_cover_url = f"{cls.BASE_URL}/songs/{song_name}/base.jpg"
-        success, cover = await cls.send_request(song_cover_url)
-        if success:
-            return File(io.BytesIO(cover), filename=f"{song_name}.jpg")
-        else:
-            raise ValueError("Thumbnail not found: %s", cover[:1000])
+        song_cover_path = cls.ROOT_PATH / "songs" / song_name / "base.jpg"
+        if song_cover_path.exists() is False:
+            raise ValueError("Thumbnail not found: %s", song_cover_path)
 
-        # return base cover if no cover found
+        return File(song_cover_path)
 
 
 class ArcaeaResponseFormatter:
@@ -384,3 +388,6 @@ class ArcaeaResponseFormatter:
             thumbnail_url=f"attachment://{thumbnail.filename}",
         )
         return embed, username, thumbnail, song_cover
+
+
+AssetFetcher.logger = setup_package_logger(AssetFetcher.__qualname__)
