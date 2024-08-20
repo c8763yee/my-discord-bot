@@ -11,6 +11,7 @@ services:
     volumes:
       - ./logs:/app/logs:rw
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
+      - /opt/arcaea/assets:/opt/arcaea/assets
     devices:
       # Mount the /dev/vcio device for the Raspberry Pi
       - /dev/vcio
