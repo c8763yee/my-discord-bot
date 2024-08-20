@@ -311,7 +311,7 @@ class APIUtils(ScoreUtils):
 
 class AssetFetcher:
     ROOT_PATH = Path("/opt/arcaea/assets")
-    with open(ROOT_PATH / "songs" / "songlist") as songlist:
+    with open(ROOT_PATH / "songs" / "songlist", encoding="utf-8") as songlist:
         songlist = SongList.model_validate(json.load(songlist))
 
     songlist_map = {song.id: song for song in songlist.songs}
@@ -321,8 +321,7 @@ class AssetFetcher:
         thumbnail_path = cls.ROOT_PATH / "img" / "grade" / f"{GRADE_SUFFIX[grade]}.png"
         if thumbnail_path.exists() is False:
             cls.logger.error("Thumbnail not found: %s", thumbnail_path)
-            raise ValueError("Thumbnail not found: %s", thumbnail_path)
-
+            raise FileNotFoundError(f"Thumbnail not found: {thumbnail_path}")
         return File(thumbnail_path)
 
     @classmethod
@@ -349,7 +348,7 @@ class AssetFetcher:
         # return base cover if no cover found
         song_cover_path = cls.ROOT_PATH / "songs" / song_name / "base.jpg"
         if song_cover_path.exists() is False:
-            raise ValueError("Thumbnail not found: %s", song_cover_path)
+            raise FileNotFoundError(f"Thumbnail not found: {song_cover_path}")
 
         return File(song_cover_path)
 

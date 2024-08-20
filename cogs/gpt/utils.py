@@ -31,13 +31,13 @@ class ChatGPT:
 
     def __init__(self):
         self._history = [self.behavior]
-        self.logger = setup_package_logger(self.__class__.__qualname__)
 
-    async def detect_malicious_content(self, prompt: str) -> bool:
-        response = await self.client.moderations.create(input=prompt)
+    @classmethod
+    async def detect_malicious_content(cls, prompt: str) -> bool:
+        response = await cls.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        self.logger.info("Moderation result: %s", result)
+        cls.logger.info("Moderation result: %s", result)
         return result.flagged or any(
             cate is True for cate in result.categories.model_dump().values()
         )
@@ -45,10 +45,11 @@ class ChatGPT:
     async def _send_message(
         self,
         max_tokens: int = OpenAIConfig.MAX_TOKENS,
+        model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
         **kwargs,
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
-            messages=self._history, max_tokens=max_tokens, **kwargs
+            messages=self._history, max_tokens=max_tokens, model=model, **kwargs
         )
         self.logger.debug("ChatGPT Response: %s", response)
         return response
@@ -109,7 +110,7 @@ class ChatGPTUtils(CogsExtension):
 
     async def generate_image(self, prompt: str, model: str) -> str:
         chatbot = ChatGPT()
-        images = await chatbot.create_images(prompt, model=model)
+        images = await chatbot.create_images(prompt=prompt, model=model)
         return images[0].url
 
     async def vision(
@@ -137,3 +138,6 @@ class ChatGPTResopnseFormatter:
         )
 
         return usage_embed
+
+
+ChatGPT.logger = setup_package_logger(ChatGPT.__qualname__)

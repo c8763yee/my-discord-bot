@@ -1,9 +1,6 @@
 from pydantic import BaseModel, Field
 
 
-class Data(BaseModel): ...
-
-
 class UpcomingContest(BaseModel):
     title: str
     titleSlug: str
@@ -12,7 +9,7 @@ class UpcomingContest(BaseModel):
     typename: str = Field(alias="__typename")
 
 
-class UpcomingContestsResponse(Data):
+class UpcomingContestsResponse(BaseModel):
     class Data(BaseModel):
         upcomingContests: list[UpcomingContest]
 

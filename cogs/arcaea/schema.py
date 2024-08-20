@@ -252,7 +252,7 @@ class Difficulty(DifficultyValidator):
 
 
 class Song(SongsValidator):
-    idx: int = Field(default_factory=lambda: Song._generate_id())
+    idx: int = Field(default_factory=SongsValidator._generate_id)
     id: str
     title_localized: Localized
     artist: str

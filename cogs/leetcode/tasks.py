@@ -127,7 +127,7 @@ class LeetCodeTasks(CogsExtension):
                 target_contest = contest
                 break
 
-        is_success, embed = await ResponseFormatter.parse_contest(contest, only_today=True)
+        is_success, embed = await ResponseFormatter.parse_contest(target_contest, only_today=True)
         if target_contest is None or is_success is False or embed is None:
             self.logger.info("No biweekly contest today")
             return
@@ -157,7 +157,7 @@ class LeetCodeTasks(CogsExtension):
                 target_contest = contest
                 break
 
-        is_success, embed = await ResponseFormatter.parse_contest(contest, only_today=True)
+        is_success, embed = await ResponseFormatter.parse_contest(target_contest, only_today=True)
         if target_contest is None or is_success is False or embed is None:
             self.logger.info("No weekly contest today")
             return
@@ -171,7 +171,7 @@ class LeetCodeTasks(CogsExtension):
                 target_contest = contest
                 break
 
-        is_success, embed = await ResponseFormatter.parse_contest(contest, only_today=True)
+        is_success, embed = await ResponseFormatter.parse_contest(target_contest, only_today=True)
         if target_contest is None or is_success is False or embed is None:
             self.logger.info("No weekly contest today")
             return
