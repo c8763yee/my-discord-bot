@@ -23,3 +23,13 @@ repos:
     rev: v8.18.4
     hooks:
       - id: gitleaks
+
+  # add pylint to pre-commit hooks (use ./.pylintrc)
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.2.6
+    hooks:
+      - id: pylint
+        args:
+          - --rcfile=./.pylintrc
+          - --fail-under=9.5
+          - --exit-zero
