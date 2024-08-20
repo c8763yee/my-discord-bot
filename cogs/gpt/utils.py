@@ -1,4 +1,5 @@
 from textwrap import dedent
+from typing import Literal
 
 import discord
 import openai
@@ -30,14 +31,13 @@ class ChatGPT:
 
     def __init__(self):
         self._history = [self.behavior]
-        self.logger = setup_package_logger(__name__)
+        self.logger = setup_package_logger(self.__class__.__qualname__)
 
-    @classmethod
-    async def detect_malicious_content(cls, prompt: str) -> bool:
-        response = await cls.client.moderations.create(input=prompt)
+    async def detect_malicious_content(self, prompt: str) -> bool:
+        response = await self.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        cls.logger.info("Moderation result: %s", result)
+        self.logger.info("Moderation result: %s", result)
         return result.flagged or any(
             cate is True for cate in result.categories.model_dump().values()
         )
@@ -50,6 +50,7 @@ class ChatGPT:
         response = await self.client.chat.completions.create(
             messages=self._history, max_tokens=max_tokens, **kwargs
         )
+        self.logger.debug("ChatGPT Response: %s", response)
         return response
 
     async def ask(self, prompt: str, **open_kwargs) -> tuple[str, CompletionUsage]:
@@ -76,7 +77,12 @@ class ChatGPT:
         )
         return results.data
 
-    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
+    async def vision(
+        self,
+        text: str,
+        image_url: str,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
+    ):
         """Returns the response from the vision model
         Args:
             text: the prompt to the model
@@ -92,7 +98,7 @@ class ChatGPT:
             },
             {"type": "text", "text": text},
         ]
-        return await self.ask(vision_prompt, model="gpt-4o")
+        return await self.ask(vision_prompt, model=model)
 
 
 class ChatGPTUtils(CogsExtension):
@@ -106,9 +112,14 @@ class ChatGPTUtils(CogsExtension):
         images = await chatbot.create_images(prompt, model=model)
         return images[0].url
 
-    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
+    async def vision(
+        self,
+        text: str,
+        image_url: str,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
+    ) -> str:
         chatbot = ChatGPT()
-        return await chatbot.vision(text, image_url)
+        return await chatbot.vision(text, image_url, model=model)
 
 
 class ChatGPTResopnseFormatter:

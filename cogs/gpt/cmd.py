@@ -3,6 +3,7 @@ from typing import Literal
 import discord
 from discord.ext import commands
 
+from config import OpenAIConfig
 from loggers import setup_package_logger
 
 from .tasks import ChatGPTTasks
@@ -28,7 +29,7 @@ class ChatGPTCMD(ChatGPTTasks):
         self,
         ctx: commands.Context,
         question: str,
-        model: Literal["gpt-3.5-turbo", "gpt-4o"] = "gpt-3.5-turbo",
+        model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
     ):
         await ctx.interaction.response.defer()
         answer, usage = await self.utils.ask(question, model=model)
@@ -40,15 +41,21 @@ class ChatGPTCMD(ChatGPTTasks):
         self,
         ctx: commands.Context,
         prompt: str,
-        model: Literal["dall-e-2", "dall-e-3"] = "dall-e-2",
+        model: Literal["dall-e-2", "dall-e-3"] = OpenAIConfig.IMAGE_MODEL,
     ):
         await ctx.interaction.response.defer()
         image_url = await self.utils.generate_image(prompt, model)
         return await ctx.interaction.followup.send(image_url)
 
     @chatgpt.command("vision")
-    async def vision(self, ctx: commands.Context, text: str, image: discord.Attachment):
+    async def vision(
+        self,
+        ctx: commands.Context,
+        text: str,
+        image: discord.Attachment,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
+    ):
         await ctx.interaction.response.defer()
-        vision_response, usage = await self.utils.vision(text, image.url)
+        vision_response, usage = await self.utils.vision(text, image.url, model=model)
         usage_embed = await ChatGPTResopnseFormatter.usage(usage)
         return await ctx.interaction.followup.send(vision_response, embed=usage_embed)
