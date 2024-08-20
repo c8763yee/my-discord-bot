@@ -4,12 +4,9 @@ import discord
 from discord.ext import commands
 
 from config import OpenAIConfig
-from loggers import setup_package_logger
 
 from .tasks import ChatGPTTasks
 from .utils import ChatGPTResopnseFormatter
-
-logger = setup_package_logger(__name__)
 
 
 class ChatGPTCMD(ChatGPTTasks):
