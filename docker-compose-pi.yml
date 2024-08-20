@@ -9,6 +9,8 @@ services:
       - ./logs:/app/logs:rw
       - /usr/bin:/usr/bin # Mount the /usr/bin directory
       - /opt/arcaea/assets:/opt/arcaea/assets
+      - /home/c8763yee/mygo-anime:/home/user/mygo-anime
+
     devices:
       # Mount the /dev/vcio device for the Raspberry Pi
       - /dev/vcio
@@ -19,18 +21,6 @@ services:
     environment:
       - LD_LIBRARY_PATH=/usr/lib
       - FILE_API_URL=172.18.0.3
-    depends_on:
-      - file_api
-
-  file_api:
-    build:
-      context: api
-      dockerfile: Dockerfile
-    image: file_api
-    container_name: file_api
-    networks:
-      test_bot_net:
-        ipv4_address: 172.18.0.3
 
 networks:
   test_bot_net:
