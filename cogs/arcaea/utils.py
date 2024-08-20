@@ -339,9 +339,7 @@ class AssetFetcher:
         for prefix in ["1080_", ""]:
             song_cover_path = cls.ROOT_PATH / "songs" / song_name / f"{prefix}{difficulty_name}.jpg"
             cls.logger.debug("Trying to fetch: %s", song_cover_path)
-            # success, cover = await cls.send_request(song_cover_url)
-            # if success:
-            #     return File(io.BytesIO(cover), filename=f"{song_name}_{difficulty_name}.jpg")
+
             if song_cover_path.exists():
                 return File(song_cover_path)
 
