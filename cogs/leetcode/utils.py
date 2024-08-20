@@ -71,7 +71,7 @@ class LeetCodeUtils(CogsExtension):
         return response
 
     async def fetch_daily_challenge(self) -> dict:
-        """send embed message with leetcode daily challenge data
+        """Send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
         with open("queries/profile_page.graphql", encoding="utf-8") as file:

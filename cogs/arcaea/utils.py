@@ -72,14 +72,13 @@ class ScoreUtils:
 
     @staticmethod
     async def get_grade(score: int) -> int:
-        """
-        Get grade from score
+        """Get grade from score
         EX+: 9900000
         EX: 9800000
         AA: 9500000
         A: 9200000
         B: 8900000
-        C: 8600000
+        C: 8600000.
         """
         grades = [
             (GradeScore.EX_PLUS, Grade.EX_PLUS),

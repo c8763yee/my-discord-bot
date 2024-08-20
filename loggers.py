@@ -20,8 +20,7 @@ TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 
 class ColoredFormatter(logging.Formatter):
-    """
-    A custom formatter to add colors to the log messages based on the log level.
+    """A custom formatter to add colors to the log messages based on the log level.
     Only works for console logs(stdout, stderr) and not for file logs.
     """
 
@@ -53,15 +52,17 @@ class ColoredFormatter(logging.Formatter):
 def setup_package_logger(
     package_name: str, file_level=logging.INFO, console_level=logging.DEBUG
 ) -> logging.Logger:
-    """_summary_
+    """_summary_.
 
     Initialize the logger for the specified module.
+
     Args:
+    ----
         package_name (str): The name of the package.
         file_level (int): The log level for the file handler.
         console_level (int): The log level for the console handler.
-    """
 
+    """
     package_path_elements = package_name.split(".")
     log_directory_path = os.sep.join(package_path_elements[:-1])
     logger_name = package_path_elements[-1]

@@ -8,9 +8,7 @@ class LeetCodeCMD(LeetCodeTasks):
     # methods(commands)
     @commands.hybrid_group(ephermal=True)
     async def leetcode(self, ctx: commands.Context):
-        """
-        dummy function to create a group command
-        """
+        """Dummy function to create a group command."""
 
     @leetcode.command("user")
     async def user(self, ctx: commands.Context, username: str):

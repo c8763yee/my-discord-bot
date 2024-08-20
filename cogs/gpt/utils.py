@@ -12,9 +12,8 @@ from loggers import setup_package_logger
 
 
 class ChatGPT:
-    """
-    A chatbot based on OpenAI's chat API
-    if the chat history doesn't need to save, then use DUMMY_UUID as UUID
+    """A chatbot based on OpenAI's chat API
+    if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
     """
 
     behavior = {
@@ -78,11 +77,10 @@ class ChatGPT:
         return results.data
 
     async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
-        """
-        returns the response from the vision model
+        """Returns the response from the vision model
         Args:
             text: the prompt to the model
-            image_text: the base64 encoded image
+            image_text: the base64 encoded image.
         """
         if await self.detect_malicious_content(text):
             raise ValueError("This Prompt contains malicious content")

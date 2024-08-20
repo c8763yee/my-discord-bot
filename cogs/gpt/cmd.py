@@ -15,10 +15,12 @@ class ChatGPTCMD(ChatGPTTasks):
     @commands.hybrid_group(ephermal=True)
     async def chatgpt(self, _: commands.Context):
         """_description_
-        dummy function to create a group command
+        dummy function to create a group command.
 
         Args:
+        ----
             ctx (commands.Context): discord context from the command invoker
+
         """
 
     @chatgpt.command("ask")
