@@ -1,13 +1,14 @@
 {
-    "taipyStudio.config.mainPythonFile": "loggers.py",
-    "taipyStudio.gUI.elementsFilePaths": [],
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "charliermarsh.ruff"
-    },
-    "ruff.fixAll": true,
-    "ruff.codeAction.fixViolation": {
-        "enable": true
-    },
-    "ruff.lint.run": "onSave"
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "ruff.codeAction.fixViolation": {
+    "enable": true
+  },
+  "ruff.lint.run": "onSave"
 }
