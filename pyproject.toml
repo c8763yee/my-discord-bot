@@ -24,13 +24,16 @@ openai = "^1.41.1"
 paho-mqtt = "^2.1.0"
 pynacl = "^1.5.0"
 python-dotenv = "^1.0.1"
-discord-py={version="^2.4.0",extras=["voice"]}
+discord-py = { version = "^2.4.0", extras = ["voice"] }
 psutil = "^6.0.0"
+python-ffmpeg = "^2.0.12"
+sqlmodel = "^0.0.21"
+aiosqlite = "^0.20.0"
 
 
 [tool.poetry.group.dev.dependencies]
-pylint = "3.1.0"
-ruff = "^0.4.4"
+pylint = "^3.2.6"
+ruff = "^0.6.1"
 pre-commit = "^3.7.1"
 ipython = "^8.24.0"
 pylint-pydantic = "^0.3.2"
