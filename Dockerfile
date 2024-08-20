@@ -9,6 +9,7 @@ RUN apt-get update -y && \
         apt-utils \
         libass-dev \
         libmp3lame-dev \
+        libavdevice59 \
         libomxil-bellagio-dev \
         libvpx-dev \
         libx264-dev \
