@@ -6,3 +6,5 @@
 [ArcWebAPI](https://github.com/mechtifs/ArcWebAPI)
 
 [discord.py](https://discordpy.readthedocs.io/)
+
+[MyGO!!!!! Subtitle](https://forum.gamer.com.tw/C.php?bsn=60076&snA=8240452)
