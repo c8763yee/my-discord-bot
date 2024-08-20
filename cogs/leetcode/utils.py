@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import re
+from pathlib import Path
 from textwrap import dedent
 
 import discord
@@ -18,7 +19,8 @@ from .schema import UpcomingContest, UpcomingContestsResponse
 
 if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True)
-with open("secret.json", encoding="utf-8") as f:
+
+with Path.cwd() / "json_data" / "secret.json".open("r", encoding="utf-8") as f:
     script = json.load(f)
     headers = script["headers"]
     cookies = script["cookies"]
