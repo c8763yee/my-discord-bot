@@ -53,7 +53,7 @@ class Disposition(BaseModel):
     clean_effects: int
     attached_pic: int
     timed_thumbnails: int
-    non_diegetic: int
+    non_diegetic: int|None = None
     captions: int
     descriptions: int
     metadata: int
@@ -134,7 +134,7 @@ class Format(BaseModel):
     filename: str
     nb_streams: int
     nb_programs: int
-    nb_stream_groups: int
+    nb_stream_groups: int|None = None
     format_name: str
     format_long_name: str
     start_time: str
