@@ -12,10 +12,21 @@ DIFFICULTY_COLOR_LIST = ["#165365", "#194A08", "#52184D", "#5A0813", "#5D4E76"]
 
 GRADE_NAMES = ["D", "C", "B", "A", "AA", "EX", "EX+"]
 GRADE_SUFFIX = ["d", "c", "b", "a", "aa", "ex", "explus"]
-DIFFICULTY_LEN = 4  # Past, Present, Future|Eternal, Beyond
+MAX_DIFFICULTY = 4  # Past, Present, Future|Eternal, Beyond
+MAX_RATING: list = [6, 9, 10, 12, 12]
+MIN_INT = -(2**31)
+MAX_INT = 2**31 - 1
 
 
-class Grade(IntEnum):
+class DifficultyEnum(IntEnum):
+    PAST = 0
+    PRESENT = 1
+    FUTURE = 2
+    BEYOND = 3
+    ETERNAL = 4
+
+
+class GradeEnum(IntEnum):
     EX_PLUS = 6
     EX = 5
     AA = 4
@@ -25,7 +36,7 @@ class Grade(IntEnum):
     D = 0
 
 
-class GradeScore(IntEnum):
+class GradeScoreEnum(IntEnum):
     PM = 10000000
     EX_PLUS = 9900000
     EX = 9800000

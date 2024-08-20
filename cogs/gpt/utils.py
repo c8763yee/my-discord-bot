@@ -1,4 +1,5 @@
 from textwrap import dedent
+from typing import Literal
 
 import discord
 import openai
@@ -12,9 +13,8 @@ from loggers import setup_package_logger
 
 
 class ChatGPT:
-    """
-    A chatbot based on OpenAI's chat API
-    if the chat history doesn't need to save, then use DUMMY_UUID as UUID
+    """A chatbot based on OpenAI's chat API
+    if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
     """
 
     behavior = {
@@ -31,7 +31,6 @@ class ChatGPT:
 
     def __init__(self):
         self._history = [self.behavior]
-        self.logger = setup_package_logger(__name__)
 
     @classmethod
     async def detect_malicious_content(cls, prompt: str) -> bool:
@@ -46,11 +45,13 @@ class ChatGPT:
     async def _send_message(
         self,
         max_tokens: int = OpenAIConfig.MAX_TOKENS,
+        model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
         **kwargs,
     ) -> ChatCompletion:
         response = await self.client.chat.completions.create(
-            messages=self._history, max_tokens=max_tokens, **kwargs
+            messages=self._history, max_tokens=max_tokens, model=model, **kwargs
         )
+        self.logger.debug("ChatGPT Response: %s", response)
         return response
 
     async def ask(self, prompt: str, **open_kwargs) -> tuple[str, CompletionUsage]:
@@ -77,12 +78,16 @@ class ChatGPT:
         )
         return results.data
 
-    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
-        """
-        returns the response from the vision model
+    async def vision(
+        self,
+        text: str,
+        image_url: str,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
+    ):
+        """Returns the response from the vision model
         Args:
             text: the prompt to the model
-            image_text: the base64 encoded image
+            image_text: the base64 encoded image.
         """
         if await self.detect_malicious_content(text):
             raise ValueError("This Prompt contains malicious content")
@@ -94,7 +99,7 @@ class ChatGPT:
             },
             {"type": "text", "text": text},
         ]
-        return await self.ask(vision_prompt, model="gpt-4o")
+        return await self.ask(vision_prompt, model=model)
 
 
 class ChatGPTUtils(CogsExtension):
@@ -105,12 +110,17 @@ class ChatGPTUtils(CogsExtension):
 
     async def generate_image(self, prompt: str, model: str) -> str:
         chatbot = ChatGPT()
-        images = await chatbot.create_images(prompt, model=model)
+        images = await chatbot.create_images(prompt=prompt, model=model)
         return images[0].url
 
-    async def vision(self, text: str, image_url: str) -> tuple[str, CompletionUsage]:
+    async def vision(
+        self,
+        text: str,
+        image_url: str,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
+    ) -> str:
         chatbot = ChatGPT()
-        return await chatbot.vision(text, image_url)
+        return await chatbot.vision(text, image_url, model=model)
 
 
 class ChatGPTResopnseFormatter:
@@ -128,3 +138,6 @@ class ChatGPTResopnseFormatter:
         )
 
         return usage_embed
+
+
+ChatGPT.logger = setup_package_logger(ChatGPT.__qualname__)

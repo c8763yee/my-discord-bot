@@ -7,12 +7,14 @@ from textwrap import dedent
 import discord
 from aiohttp import ClientSession, ContentTypeError
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 from cogs import CogsExtension
 from core.models import Field
 from loggers import TZ
 
 from .const import API_URL, THUMBNAIL_URL
+from .schema import UpcomingContest, UpcomingContestsResponse
 
 if os.path.exists("env/bot.env"):
     load_dotenv(dotenv_path="env/bot.env", verbose=True)
@@ -31,28 +33,37 @@ difficulty_color = {
 
 
 class LeetCodeUtils(CogsExtension):
-    async def _send_request_to_api(self, operation: str, query: str = "", **variables) -> dict:
-        request_body = {
-            "operationName": operation,
-            "variables": variables,
-            "query": query,
-        }
+    async def _send_request_to_api(
+        self,
+        operation: str,
+        query: str = "",
+        pydantic_model: type[BaseModel] | None = None,
+        **variables,
+    ) -> dict | BaseModel:
+        request_body = {"operationName": operation, "variables": variables, "query": query}
+
         async with ClientSession() as session:
             async with session.post(
                 API_URL, json=request_body, headers=headers, cookies=cookies
             ) as resp:
                 try:
                     response = await resp.json()
+
                 except ContentTypeError as exc:
                     self.logger.error("Error occurred: %s", exc)
                     raise ValueError(
                         "Error occurred while fetching data from LeetCode API"
                     ) from exc
+
+        if pydantic_model is not None:
+            return pydantic_model.model_validate(response)
+
         return response
 
     async def fetch_user_info(self, username: str) -> dict:
         with open("queries/profile_page.graphql", encoding="utf-8") as file:
             user_query = file.read()
+
         operation_name = [
             re.match(r"^\s*query\s+([a-zA-Z]+)\s*\((.*)\)\s*{", line).group(1)
             for line in user_query.split("\n")
@@ -71,7 +82,7 @@ class LeetCodeUtils(CogsExtension):
         return response
 
     async def fetch_daily_challenge(self) -> dict:
-        """send embed message with leetcode daily challenge data
+        """Send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
         with open("queries/profile_page.graphql", encoding="utf-8") as file:
@@ -80,12 +91,14 @@ class LeetCodeUtils(CogsExtension):
         response = await self._send_request_to_api("questionOfToday", query=daily_challenge_query)
         return response["data"]
 
-    async def fetch_contest(self) -> list[dict]:
+    async def fetch_contest(self) -> list[UpcomingContest]:
         with open("queries/feed.graphql", encoding="utf-8") as file:
             contest_query = file.read()
 
-        response = await self._send_request_to_api("upcomingContests", query=contest_query)
-        return response["data"]["upcomingContests"]
+        response = await self._send_request_to_api(
+            "upcomingContests", query=contest_query, pydantic_model=UpcomingContestsResponse
+        )
+        return response.data.upcomingContests
 
 
 class ResponseFormatter:
@@ -113,11 +126,7 @@ class ResponseFormatter:
             f'[{recent_ac_list[0]["title"]}]'
             f'(https://leetcode.com/problems/{recent_ac_list[0]["titleSlug"]})'
         )
-        rank_text = (
-            str(rating_info.get("globalRanking", "N/A"))
-            + "/"
-            + str(rating_info.get("totalParticipants", "N/A"))
-        )
+
         rank_text = (
             str(rating_info.get("globalRanking", "N/A"))
             + "/"
@@ -177,19 +186,18 @@ class ResponseFormatter:
         )
         return embed, title
 
-    async def contest(
-        self, response: dict, only_today: bool = False
+    async def parse_contest(
+        self, contest: UpcomingContest | None = None, only_today: bool = False
     ) -> tuple[bool, discord.Embed | None]:
-        if only_today and await self.today_is_contest(response) is False:
+        if only_today and await self.today_is_contest(contest) is False or contest is None:
             return False, None
 
-        start_time = datetime.datetime.fromtimestamp(response["startTime"], tz=TZ)
-        title = description = response["title"]
-        link = f'https://leetcode.com/contest/{response["titleSlug"]}/'
+        start_time = datetime.datetime.fromtimestamp(contest.startTime, tz=TZ)
+        link = f"https://leetcode.com/contest/{contest.titleSlug}/"
 
         embed = await CogsExtension.create_embed(
-            title,
-            description,
+            contest.title,
+            "Remember to participate in the contest!",
             Field(name="Start Time", value=start_time.strftime("%Y-%m-%d %H:%M:%S"), inline=False),
             color=discord.Color.blurple(),
             url=link,
@@ -198,17 +206,20 @@ class ResponseFormatter:
         return True, embed
 
     @classmethod
-    async def contests(
-        cls, response: list[dict], only_today: bool = False
+    async def parse_contests(
+        cls, contests: list[UpcomingContest], only_today: bool = False
     ) -> tuple[bool, list[discord.Embed]]:
         embeds = []
-        for contest in response:
-            is_success, embed = await cls.contest(cls, contest, only_today)
+        result = False
+        for contest in contests:
+            is_success, embed = await cls.parse_contest(cls, contest, only_today)
             if is_success:
                 embeds.append(embed)
-        return bool(embeds), embeds
+                result = True
+
+        return result, embeds
 
     @staticmethod
-    async def today_is_contest(contest: dict) -> bool:
-        start_time = datetime.datetime.fromtimestamp(contest["startTime"], tz=TZ)
+    async def today_is_contest(contest: UpcomingContest) -> bool:
+        start_time = datetime.datetime.fromtimestamp(contest.startTime, tz=TZ)
         return start_time.date() == datetime.datetime.now(tz=TZ).date()

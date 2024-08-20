@@ -18,9 +18,7 @@ class RaspberryPiUtils(CogsExtension):
         return value / 1024 / 1024 / 1024
 
     async def get_temperature(self) -> str:
-        """
-        Get the temperature of the Raspberry Pi using the vcgencmd command
-        """
+        """Get the temperature of the Raspberry Pi using the vcgencmd command."""
         temperature = float(subprocess.check_output(TEMPERATURE_COMMAND, shell=True).decode())
 
         message = datetime.now(tz=TZ).strftime("[%Y-%m-%d %H:%M:%S]: ")
@@ -41,9 +39,7 @@ class RaspberryPiUtils(CogsExtension):
         return message
 
     async def get_stats(self):
-        """
-        Get current stats of the Raspberry Pi using psutil and vcgencmd
-        """
+        """Get current stats of the Raspberry Pi using psutil and vcgencmd."""
         memory_used = self.convert_to_gb(psutil.virtual_memory().used)
         memory_total = self.convert_to_gb(psutil.virtual_memory().total)
 

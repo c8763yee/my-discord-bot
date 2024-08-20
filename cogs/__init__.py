@@ -16,9 +16,7 @@ class CogsExtension(commands.Cog):
 
     @classmethod
     async def create_embed(cls, title: str, description: str, *fields: Field, **kwargs):
-        """
-        Create an embed message with given parameters.
-        """
+        """Create an embed message with given parameters."""
         embed = discord.Embed(
             title=title,
             description=description,

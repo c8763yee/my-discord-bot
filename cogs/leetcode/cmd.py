@@ -8,9 +8,7 @@ class LeetCodeCMD(LeetCodeTasks):
     # methods(commands)
     @commands.hybrid_group(ephermal=True)
     async def leetcode(self, ctx: commands.Context):
-        """
-        dummy function to create a group command
-        """
+        """Dummy function to create a group command."""
 
     @leetcode.command("user")
     async def user(self, ctx: commands.Context, username: str):
@@ -33,7 +31,7 @@ class LeetCodeCMD(LeetCodeTasks):
         await ctx.interaction.response.defer()
 
         response = await self.utils.fetch_contest()
-        is_success, embeds = await ResponseFormatter.contests(response, only_today)
+        is_success, embeds = await ResponseFormatter.parse_contests(response, only_today)
 
         if is_success is False:
             await ctx.interaction.followup.send("No upcoming contest")

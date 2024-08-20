@@ -24,7 +24,7 @@ async def update_time():
     now = datetime.now(tz=TZ)
     await bot.change_presence(
         activity=discord.CustomActivity(
-            name=f'現在時間： {now.strftime("%Y-%m-%d %H:%M")}',
+            name=f'現在時間: {now.strftime("%Y-%m-%d %H:%M")}',
             emoji=discord.PartialEmoji(name="🕒"),
         )
     )
@@ -63,8 +63,7 @@ bot = Bot(
 @bot.hybrid_command()
 @commands.is_owner()
 async def load(ctx: commands.Context, extension: str):
-    """Load extension.(owner only)"""
-
+    """Load extension.(owner only)."""
     await ctx.interaction.response.defer()
     await bot.load_extension(f"cogs.{extension}")
     await bot.tree.sync()
@@ -74,7 +73,7 @@ async def load(ctx: commands.Context, extension: str):
 @bot.hybrid_command()
 @commands.is_owner()
 async def unload(ctx: commands.Context, extension: str):
-    """Unload extension.(owner only)"""
+    """Unload extension.(owner only)."""
     await ctx.interaction.response.defer()
     await bot.unload_extension(f"cogs.{extension}")
     await bot.tree.sync()
@@ -84,7 +83,7 @@ async def unload(ctx: commands.Context, extension: str):
 @bot.hybrid_command()
 @commands.is_owner()
 async def reload(ctx: commands.Context, extension: str):
-    """Reload extension.(owner only)"""
+    """Reload extension.(owner only)."""
     # if new commands are added into cogs, sync the tree
     await ctx.interaction.response.defer()
     await bot.reload_extension(f"cogs.{extension}")

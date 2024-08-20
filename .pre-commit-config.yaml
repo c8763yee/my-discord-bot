@@ -1,14 +1,20 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: ^.*\.egg-info/
+      - id: check-merge-conflict
+      - id: check-case-conflict
       - id: check-json
       - id: check-toml
-      - id: check-added-large-files
-      - id: no-commit-to-branch
-      - id: detect-private-key
+      - id: check-yaml
+      - id: pretty-format-json
+        args: [--autofix, --no-ensure-ascii, --no-sort-keys]
+      - id: check-ast
+      - id: debug-statements
+      - id: check-docstring-first
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.4
@@ -18,3 +24,30 @@ repos:
           - --fix
           - --verbose
       - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  # add pylint to pre-commit hooks (use ./.pylintrc)
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.2.6
+    hooks:
+      - id: pylint
+        args:
+          - --rcfile=./.pylintrc
+          - --fail-under=9.5
+          - --exit-zero
+  - repo: https://github.com/python-poetry/poetry-plugin-export
+    rev: 1.8.0
+    hooks:
+    - id: poetry-export
+      name: poetry-export
+      description: run poetry export to sync lock file with requirements.txt
+      entry: poetry export
+      language: python
+      language_version: python3
+      pass_filenames: false
+      files: ^(.*/)?poetry\.lock$
+      args: ["-f", "requirements.txt", "-o", "requirements.txt"]
