@@ -15,9 +15,10 @@ from .types import EpisodeChoices
 class SubtitleUtils(BaseClassMixin):
     @staticmethod
     def _frame_to_time(frame: int, frame_rate: float) -> str:
-        seconds, ms = divmod(frame / frame_rate, SECOND)
-        minutes = seconds // MINUTE
-        hours = seconds // HOUR
+        total_seconds, ms = divmod(frame / frame_rate, SECOND)
+        minutes, seconds = divmod(total_seconds, MINUTE)
+        hours, _ = divmod(minutes, HOUR)
+
         return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * MICROSECOND):03d}"
 
     @staticmethod
@@ -123,11 +124,19 @@ class SubtitleUtils(BaseClassMixin):
 
         split = input_stream.split()
         palette = split[0].filter("palettegen")
-        process_palette = ffmpeg.filter([split[1], palette], "paletteuse")
-
-        result, _ = process_palette.output("pipe:", vcodec="gif", format="gif").run(
-            capture_stdout=True
+        process_palette = ffmpeg.filter([split[1], palette], "paletteuse").output(
+            "pipe:", vcodec="gif", format="gif"
         )
+
+        self.logger.info(
+            "Extracting GIF from %s: start_frame=%d, end_frame=%d with below command\n%s",
+            video_path,
+            start_frame,
+            end_frame,
+            ", ".join(map(str, process_palette.get_args())),
+        )
+
+        result, _ = process_palette.run(capture_stdout=True)
 
         return BytesIO(result)
 
