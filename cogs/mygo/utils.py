@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from cogs import CogsExtension
 
+from .const import PAGED_BY
 from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
 from .types import episodeChoices
 
@@ -127,12 +128,32 @@ class SubtitleUtils(CogsExtension):
         return BytesIO(result)
 
     @staticmethod
-    async def search_title_by_text(text: str, episode: episodeChoices) -> list[SentenceItem]:
+    async def search_title_by_text(
+        text: str, episode: episodeChoices, paged_by: int = PAGED_BY, nth_page: int = 1
+    ) -> list[SentenceItem]:
+        """(1-indexed).
+
+        Search subtitle by text and episode. and return paged result.
+
+        Assume that paged_by is always greater than 0 and nth_page is always greater than 0
+
+        Equivalent to:
+            SELECT * FROM sentence
+            WHERE episode = ${episode} AND text LIKE '%${text}%'
+            LIMIT ${paged_by} OFFSET ${paged_by * (nth_page - 1)}
+        """
+        assert paged_by > 0 and nth_page > 0, "Invalid Input"
+
         async with AsyncSession(engine) as session:
             episode_data = await session.get(EpisodeItem, episode)
-            sql_query = select(SentenceItem).where(
-                SentenceItem.episode == episode_data.episode,
-                column("text").contains(text),
+            sql_query = (
+                select(SentenceItem)
+                .where(
+                    SentenceItem.episode == episode_data.episode,
+                    column("text").contains(text),
+                )
+                .limit(paged_by)
+                .offset(paged_by * (nth_page - 1))
             )
 
             results: list[SentenceItem] = (await session.exec(sql_query)).all()
