@@ -3,7 +3,7 @@ import os
 from discord.ext import commands
 
 from .tasks import RaspberryPiTasks
-from .utils import RaspberryPiUtils, StatsFormatter
+from .utils import RaspberryPiUtils, StatsFormatter, TemperatureTooHighError
 
 
 class RaspberryPiCMD(RaspberryPiTasks):
@@ -23,11 +23,21 @@ class RaspberryPiCMD(RaspberryPiTasks):
 
     @pi.command("temp")
     async def temperature(self, ctx: commands.Context):
-        message = await self.utils.get_temperature()
+        try:
+            message = await self.utils.get_temperature()
+        except TemperatureTooHighError:
+            ctx.send("Temperature too high, rebooting")
+            os.system("sudo reboot")
+
         await ctx.send(message)
 
     @pi.command("stats")
     async def stats(self, ctx: commands.Context):
-        message = await self.utils.get_stats()
+        try:
+            message = await self.utils.get_stats()
+        except TemperatureTooHighError:
+            ctx.send("Temperature too high, rebooting")
+            os.system("sudo reboot")
+
         embed = await StatsFormatter.format_stats(message)
         await ctx.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed)

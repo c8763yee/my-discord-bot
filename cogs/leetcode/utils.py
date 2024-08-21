@@ -17,8 +17,9 @@ from loggers import TZ
 from .const import API_URL, THUMBNAIL_URL
 from .schema import UpcomingContest, UpcomingContestsResponse
 
-if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True)
+env_path = Path.cwd() / "env" / "bot.env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, verbose=True)
 
 with (Path.cwd() / "json_data" / "secret.json").open("r", encoding="utf-8") as f:
     script = json.load(f)
@@ -63,7 +64,7 @@ class LeetCodeUtils(BaseClassMixin):
         return response
 
     async def fetch_user_info(self, username: str) -> dict:
-        with open("queries/profile_page.graphql", encoding="utf-8") as file:
+        with Path("queries/profile_page.graphql").open(encoding="utf-8") as file:
             user_query = file.read()
 
         operation_name = [
@@ -87,14 +88,14 @@ class LeetCodeUtils(BaseClassMixin):
         """Send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        with open("queries/profile_page.graphql", encoding="utf-8") as file:
+        with Path("queries/profile_page.graphql").open(encoding="utf-8") as file:
             daily_challenge_query = file.read()
 
         response = await self._send_request_to_api("questionOfToday", query=daily_challenge_query)
         return response["data"]
 
     async def fetch_contest(self) -> list[UpcomingContest]:
-        with open("queries/feed.graphql", encoding="utf-8") as file:
+        with Path("queries/feed.graphql").open(encoding="utf-8") as file:
             contest_query = file.read()
 
         response = await self._send_request_to_api(

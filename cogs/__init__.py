@@ -10,6 +10,7 @@ __all__ = ("leetcode", "pi", "kasa", "gpt", "arcaea", "mygo")
 
 class CogsExtension(commands.Cog, BaseClassMixin):
     def __init__(self, bot):
+        super(BaseClassMixin, self).__init__()
         self.bot: commands.Bot = bot
         self.logger = setup_package_logger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.logger.info("Loaded class %s.%s", self.__class__.__module__, self.__class__.__name__)

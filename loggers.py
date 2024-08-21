@@ -1,8 +1,8 @@
 import datetime
 import logging
-import os
 import sys
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from textwrap import dedent
 
 FORMAT_PATTERN = dedent("""
@@ -63,10 +63,11 @@ def setup_package_logger(
         console_level (int): The log level for the console handler.
 
     """
-    package_path_elements = package_name.split(".")
-    log_directory_path = os.sep.join(package_path_elements[:-1])
-    logger_name = package_path_elements[-1]
-    os.makedirs(f"logs/{log_directory_path}", exist_ok=True, mode=0o777)
+    # package_path_elements = package_name.split(".")
+    # log_directory_path = Path(*package_path_elements[:-1])
+    # logger_name = package_path_elements[-1]
+    # (Path("logs") / log_directory_path).mkdir(parents=True, exist_ok=True, mode=0o777)
+    log_full_path = Path("logs") / Path(*(package_name.split(".")))
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
     console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
@@ -75,9 +76,10 @@ def setup_package_logger(
     console_handler.setLevel(console_level)
     console_handler.setFormatter(console_formatter)
 
-    logfile_name = f"logs/{log_directory_path}/{logger_name}.log".replace("//", "/")
+    # logfile_name = f"logs/{log_directory_path}/{logger_name}.log".replace("//", "/")
+
     file_handler = RotatingFileHandler(
-        filename=logfile_name,
+        filename=log_full_path.with_suffix(".log"),
         maxBytes=10 * 1024 * 1024,  # 10 MB
     )
     file_handler.setLevel(file_level)

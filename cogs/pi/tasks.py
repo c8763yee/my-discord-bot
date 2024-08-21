@@ -5,7 +5,7 @@ from discord.ext import tasks
 
 from cogs import CogsExtension
 
-from .utils import RaspberryPiUtils, StatsFormatter
+from .utils import RaspberryPiUtils, StatsFormatter, TemperatureTooHighError
 
 per_clock = [
     datetime.time(
@@ -32,6 +32,11 @@ class RaspberryPiTasks(CogsExtension):
     @tasks.loop(time=per_clock)
     async def get_stats(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
-        message = await self.utils.get_stats()
+        try:
+            message = await self.utils.get_stats()
+        except TemperatureTooHighError:
+            await channel.send("Temperature too high, rebooting")
+            os.system("sudo reboot")
+
         embed = await StatsFormatter.format_stats(message)
         await channel.send(f'[Raspberry Pi Stats] {message["now"]}', embed=embed, silent=True)

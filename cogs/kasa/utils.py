@@ -1,6 +1,7 @@
 import json
 import os
 from collections.abc import Iterable
+from pathlib import Path
 
 import discord
 from aiomqtt import Client
@@ -9,8 +10,9 @@ from dotenv import load_dotenv
 from core.classes import BaseClassMixin
 from core.models import Field
 
-if os.path.exists("env/mqtt.env"):
-    load_dotenv("env/mqtt.env", verbose=True)
+env_path = Path.cwd() / "env" / "mqtt.env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, verbose=True)
 
 MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))

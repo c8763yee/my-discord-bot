@@ -1,4 +1,3 @@
-import os
 import subprocess
 from datetime import datetime
 
@@ -10,6 +9,9 @@ from core.models import Field
 from loggers import TZ
 
 from .const import REBOOT_TEMPERATURE, TEMPERATURE_COMMAND, WARNING_TEMPERATURE
+
+
+class TemperatureTooHighError(Exception): ...
 
 
 class RaspberryPiUtils(BaseClassMixin):
@@ -25,11 +27,9 @@ class RaspberryPiUtils(BaseClassMixin):
 
         if temperature > REBOOT_TEMPERATURE:
             self.logger.warning("Temperature Too High: %s °C, Rebooting", temperature)
-            self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None))).send(
-                f"Temperature Too High: {temperature} °C, Rebooting"
-            )
-            os.system("sudo reboot")
-        elif temperature > WARNING_TEMPERATURE:
+            raise TemperatureTooHighError(f"Temperature Too High: {temperature} °C, Rebooting")
+
+        if temperature > WARNING_TEMPERATURE:
             message += f"Temperature High: {temperature} °C, Consider Rebooting or Cooling"
             self.logger.warning(message)
         else:

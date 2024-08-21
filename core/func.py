@@ -1,4 +1,5 @@
 from base64 import b64encode as be
+from pathlib import Path
 
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,11 +8,15 @@ from cogs.mygo.schema import EpisodeItem, SentenceItem, SubtitleItem, engine
 from cogs.mygo.utils import SubtitleUtils
 
 
-def encode_image_to_b64(image_path: str | bytes) -> str:
+def encode_image_to_b64(image_path: str | Path | bytes) -> str:
+    if isinstance(image_path, bytes):
+        return be(image_path).decode("utf-8")
+
     if isinstance(image_path, str):
-        with open(image_path, "rb") as image_file:
-            return be(image_file.read()).decode("utf-8")
-    return be(image_path).decode("utf-8")
+        image_path = Path(image_path)
+
+    with image_path.open("rb") as image:
+        return be(image.read()).decode("utf-8")
 
 
 async def init_models():
