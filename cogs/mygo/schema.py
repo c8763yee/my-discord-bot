@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Field, SQLModel
 
@@ -15,10 +15,8 @@ class BaseSQLModel(SQLModel):
 
 
 class EpisodeItem(BaseSQLModel, table=True):
-    class Config:
-        title = "episode"
-
     __tablename__ = "episode"
+    model_config = ConfigDict(title=__tablename__)
 
     episode: str = Field(primary_key=True)
     total_frame: int
@@ -26,11 +24,6 @@ class EpisodeItem(BaseSQLModel, table=True):
 
 
 class SentenceItem(BaseSQLModel, table=True):
-    class Config:
-        title = "sentence"
-
-    __tablename__ = "sentence"
-
     def __str__(self):
         return dedent(
             f"""
@@ -46,6 +39,9 @@ class SentenceItem(BaseSQLModel, table=True):
 
             """
         )
+
+    __tablename__ = "sentence"
+    model_config = ConfigDict(title=__tablename__)
 
     text: str
     episode: str

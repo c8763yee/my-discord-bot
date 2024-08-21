@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 import cogs
 from cogs.arcaea.utils import APIUtils
@@ -48,10 +49,11 @@ class Bot(commands.Bot):
 
         await init_models()
 
-        for episode in ["1-3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]:
-            await db_insert_episode(episode)
+        async with AsyncSession(engine) as session:
+            for episode in ["1-3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]:
+                await db_insert_episode(episode, session)
 
-        await db_insert_subtitle_data(data)
+            await db_insert_subtitle_data(data, session)
 
 
 # ---------------------------- Initializing the bot ---------------------------- #
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     """
     )
     try:
-        bot.run(os.environ["DISCORD_BOT_TOKEN"], log_handler=None)
+        bot.run(os.environ["DISCORD_BOT_TOKEN"], log_handler=None, log_level=logging.WARNING)
     finally:
         APIUtils.close_session()
         logger.info("Session closed")

@@ -24,31 +24,29 @@ async def init_models():
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
-async def db_insert_subtitle_data(data: SubtitleItem, update: bool = False):
-    async with AsyncSession(engine) as session:
-        for item in data.result:
-            if (
-                old_row := await session.get(SentenceItem, item.segment_id)
-            ) is not None and update is True:
-                old_row.sqlmodel_update(item)
-                session.add(old_row)
-
-            elif old_row is None:
-                session.add(item)
-
-        await session.commit()
-
-
-async def db_insert_episode(episode: str, update: bool = False):
-    data = await SubtitleUtils.get_total_frame_number(episode)
-    async with AsyncSession(engine) as session:
-        insert_item = EpisodeItem(
-            episode=episode, total_frame=data.total_frame, frame_rate=data.frame_rate
-        )
-        if (old_row := await session.get(EpisodeItem, episode)) is not None and update is True:
-            old_row.sqlmodel_update(insert_item)
+async def db_insert_subtitle_data(data: SubtitleItem, session: AsyncSession, update: bool = False):
+    for item in data.result:
+        if (
+            old_row := await session.get(SentenceItem, item.segment_id)
+        ) is not None and update is True:
+            old_row.sqlmodel_update(item)
             session.add(old_row)
 
         elif old_row is None:
-            session.add(insert_item)
-        await session.commit()
+            session.add(item)
+
+    await session.commit()
+
+
+async def db_insert_episode(episode: str, session: AsyncSession, update: bool = False):
+    data = await SubtitleUtils.get_total_frame_number(episode)
+    insert_item = EpisodeItem(
+        episode=episode, total_frame=data.total_frame, frame_rate=data.frame_rate
+    )
+    if (old_row := await session.get(EpisodeItem, episode)) is not None and update is True:
+        old_row.sqlmodel_update(insert_item)
+        session.add(old_row)
+
+    elif old_row is None:
+        session.add(insert_item)
+    await session.commit()
