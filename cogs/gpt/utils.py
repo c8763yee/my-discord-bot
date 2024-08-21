@@ -123,7 +123,7 @@ class ChatGPTUtils(CogsExtension):
         return await chatbot.vision(text, image_url, model=model)
 
 
-class ChatGPTResopnseFormatter:
+class ChatGPTResponseFormatter:
     @classmethod
     async def usage(cls, usage: CompletionUsage) -> tuple[str, discord.Embed]:
         usage_embed = await CogsExtension.create_embed(
@@ -140,4 +140,4 @@ class ChatGPTResopnseFormatter:
         return usage_embed
 
 
-ChatGPT.logger = setup_package_logger(ChatGPT.__qualname__)
+ChatGPT.logger = setup_package_logger(f"{ChatGPT.__module__}.{ChatGPT.__name__}")

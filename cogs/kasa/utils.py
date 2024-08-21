@@ -71,7 +71,7 @@ class KasaResponseFormatter:
                 title="Power Usage Report",
                 description=f"Power usage of the plug: {payload['name']}(ID: {payload['id']})",
                 color=(
-                    discord.Color.green() if payload["is_on"] else discord.Color.from_rgb(0, 0, 0)
+                    discord.Color.green() if payload["status"] else discord.Color.from_rgb(0, 0, 0)
                 ),
             )
             .add_field(name="Total Energy(kWh)", value=payload["total_wh"], inline=False)

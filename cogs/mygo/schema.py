@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from pydantic import BaseModel, computed_field
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Field, SQLModel
@@ -29,12 +31,37 @@ class SentenceItem(BaseSQLModel, table=True):
 
     __tablename__ = "sentence"
 
+    def __str__(self):
+        return dedent(
+            f"""
+            Episode: {self.episode}
+            Frame Start: {self.frame_start}
+            Frame End: {self.frame_end}
+            Text: {self.text}
+
+            -----------------
+            command:
+                <prefix>mygo gif {self.episode} {self.frame_start} {self.frame_end}
+                <prefix>mygo frame {self.episode} <number in {self.frame_start} ~ {self.frame_end}>
+
+            """
+        )
+
     text: str
     episode: str
     frame_start: int
     frame_end: int
     segment_id: int = Field(default=None, primary_key=True)
-    # segment_id: int
+
+    @computed_field
+    @property
+    def gif_command(self) -> str:
+        return f"mygo gif {self.episode} {self.frame_start} {self.frame_end}"
+
+    @computed_field
+    @property
+    def frame_command(self) -> str:
+        return f"mygo frame {self.episode} <number in {self.frame_start} ~ {self.frame_end}>"
 
 
 # --------------- Pydantic Model --------------- #
@@ -53,7 +80,7 @@ class Disposition(BaseModel):
     clean_effects: int
     attached_pic: int
     timed_thumbnails: int
-    non_diegetic: int|None = None
+    non_diegetic: int | None = None
     captions: int
     descriptions: int
     metadata: int
@@ -134,7 +161,7 @@ class Format(BaseModel):
     filename: str
     nb_streams: int
     nb_programs: int
-    nb_stream_groups: int|None = None
+    nb_stream_groups: int | None = None
     format_name: str
     format_long_name: str
     start_time: str
