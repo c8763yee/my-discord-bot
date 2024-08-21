@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 from textwrap import dedent
+from time import perf_counter
 
 import discord
 from discord.ext import commands
@@ -31,8 +32,12 @@ class Bot(commands.Bot):
         channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
 
         for modules in cogs.__all__:
+            start_time = perf_counter()
             await self.load_extension(f"cogs.{modules}")
-            await channel.send(f"`{modules}` loaded", silent=True)
+            await channel.send(
+                f"`{modules}` loaded in {perf_counter() - start_time:.2f}s",
+                silent=True,
+            )
 
         await self.tree.sync()
         async with engine.begin() as conn:
@@ -69,31 +74,39 @@ bot = Bot(
 @commands.is_owner()
 async def load(ctx: commands.Context, extension: str):
     """Load extension.(owner only)."""
+    start_time = perf_counter()
     await ctx.interaction.response.defer()
     await bot.load_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` loaded", ephemeral=True)
+    await ctx.interaction.followup.send(
+        f"`{extension}` loaded in {perf_counter() - start_time:.2f}s", ephemeral=True
+    )
 
 
 @bot.hybrid_command()
 @commands.is_owner()
 async def unload(ctx: commands.Context, extension: str):
     """Unload extension.(owner only)."""
+    start_time = perf_counter()
     await ctx.interaction.response.defer()
     await bot.unload_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` unloaded", ephemeral=True)
+    await ctx.interaction.followup.send(
+        f"`{extension}` unloaded in {perf_counter() - start_time:.2f}s", ephemeral=True
+    )
 
 
 @bot.hybrid_command()
 @commands.is_owner()
 async def reload(ctx: commands.Context, extension: str):
     """Reload extension.(owner only)."""
-    # if new commands are added into cogs, sync the tree
+    start_time = perf_counter()
     await ctx.interaction.response.defer()
     await bot.reload_extension(f"cogs.{extension}")
     await bot.tree.sync()
-    await ctx.interaction.followup.send(f"`{extension}` reloaded", ephemeral=True)
+    await ctx.interaction.followup.send(
+        f"`{extension}` reloaded in {perf_counter() - start_time:.2f}s", ephemeral=True
+    )
 
 
 # ---------------------------- Running the bot ---------------------------- #

@@ -2,6 +2,7 @@ from typing import Literal
 
 from discord.ext import commands
 
+from .const import PlugID
 from .tasks import KasaTasks
 from .utils import KasaResponseFormatter
 
@@ -13,7 +14,7 @@ class KasaCMD(KasaTasks):
         """Dummy function to create a group command."""
 
     @kasa.command("emeter")
-    async def kasa_emeter(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6]):
+    async def kasa_emeter(self, ctx: commands.Context, plug_id: PlugID):
         await ctx.interaction.response.defer()
         payload = await self.utils.get_power_usage(plug_id)
         embed = await KasaResponseFormatter.format_power_usage(payload)
@@ -23,12 +24,11 @@ class KasaCMD(KasaTasks):
     async def kasa_emeters(
         self,
         ctx: commands.Context,
-        plug_ids: commands.Greedy[commands.Range[int, 0, 6]] = None,
+        plug_ids: commands.Greedy[int] = None,  # greedy can't be used with enum
     ):
         await ctx.interaction.response.defer()
-        if plug_ids is None:
-            plug_ids = range(6 + 1)  # default to all plugs
-
+        if plug_ids is None:  # default to all plugs
+            plug_ids = list(PlugID)
         payloads = await self.utils.get_power_usage_multiple(plug_ids)
         embeds = await KasaResponseFormatter.format_power_usage_multiple(payloads)
         await ctx.interaction.followup.send(
@@ -37,12 +37,12 @@ class KasaCMD(KasaTasks):
 
     @commands.is_owner()
     @kasa.command("on")
-    async def kasa_on(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6]):
+    async def kasa_on(self, ctx: commands.Context, plug_id: PlugID):
         await ctx.send(await self.utils.turn_on(plug_id))
 
     @commands.is_owner()
     @kasa.command("off")
-    async def kasa_off(self, ctx: commands.Context, plug_id: commands.Range[int, 0, 6]):
+    async def kasa_off(self, ctx: commands.Context, plug_id: PlugID):
         await ctx.send(await self.utils.turn_off(plug_id))
 
     @commands.is_owner()
@@ -50,7 +50,7 @@ class KasaCMD(KasaTasks):
     async def kasa_toggle(
         self,
         ctx: commands.Context,
-        plug_id: commands.Range[int, 0, 6],
+        plug_id: PlugID,
         status: Literal["on", "off"] | None = None,
     ):
         await ctx.send(await self.utils.toggle(plug_id, status))
