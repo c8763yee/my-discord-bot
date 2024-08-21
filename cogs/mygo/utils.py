@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.classes import BaseClassMixin
 
-from .const import PAGED_BY
+from .const import HEIGHT, HOUR, MICROSECOND, MINUTE, PAGED_BY, SECOND
 from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
 from .types import EpisodeChoices
 
@@ -15,10 +15,10 @@ from .types import EpisodeChoices
 class SubtitleUtils(BaseClassMixin):
     @staticmethod
     def _frame_to_time(frame: int, frame_rate: float) -> str:
-        seconds, ms = divmod(frame / frame_rate, 1)
-        minutes, seconds = divmod(seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * 1000):03d}"
+        seconds, ms = divmod(frame / frame_rate, SECOND)
+        minutes = seconds // MINUTE
+        hours = seconds // HOUR
+        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * MICROSECOND):03d}"
 
     @staticmethod
     async def _check_frame_exist(episode: EpisodeChoices, *frames: int) -> list[bool]:
@@ -117,7 +117,7 @@ class SubtitleUtils(BaseClassMixin):
             video_path,
             ss=self._frame_to_time(start_frame, episode_data.frame_rate),
             to=self._frame_to_time(end_frame, episode_data.frame_rate),
-        )
+        ).filter("scale", HEIGHT, -1)
         if reverse:
             input_stream = input_stream.filter("reverse")
 

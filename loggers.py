@@ -48,9 +48,7 @@ class ColoredFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def setup_package_logger(
-    package_name: str, file_level=logging.INFO, console_level=logging.DEBUG
-) -> logging.Logger:
+def setup_package_logger(package_name: str, file_level=logging.INFO) -> logging.Logger:
     """_summary_.
 
     Initialize the logger for the specified module.

@@ -9,6 +9,8 @@ __all__ = ("leetcode", "pi", "kasa", "gpt", "arcaea", "mygo")
 
 
 class CogsExtension(commands.Cog, BaseClassMixin):
+    cogs_logger = setup_package_logger("cogs")
+
     def __init__(self, bot):
         super(BaseClassMixin, self).__init__()
         self.bot: commands.Bot = bot
@@ -16,11 +18,19 @@ class CogsExtension(commands.Cog, BaseClassMixin):
         self.logger.info("Loaded class %s.%s", self.__class__.__module__, self.__class__.__name__)
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        self.logger.error("Error in command `%s`:\n%s", ctx.command.qualified_name, error)
-        self.logger.exception(error)
+        self.cogs_logger.error(
+            "Error in command `%s` in class `%s.%s`:\n%s",
+            ctx.command.qualified_name,
+            self.__class__.__module__,
+            self.__class__.__name__,
+            error,
+        )
+        self.cogs_logger.exception(error)
 
         await ctx.send(
-            f"Error in command `{ctx.command.qualified_name}`:\n```python\n{error!r}\n```"
+            f"Error in command `{ctx.command.qualified_name}` "
+            f"in class `{self.__class__.__module__}.{self.__class__.__name__}`:\n"
+            f"```python\n{error.__class__.__name__}: {error}\n```"
         )
 
     async def cog_app_command_error(
