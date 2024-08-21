@@ -10,15 +10,16 @@ from aiohttp import ClientSession, ContentTypeError
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import TZ
 
 from .const import API_URL, THUMBNAIL_URL
 from .schema import UpcomingContest, UpcomingContestsResponse
 
-if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True)
+env_path = Path.cwd() / "env" / "bot.env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, verbose=True)
 
 with (Path.cwd() / "json_data" / "secret.json").open("r", encoding="utf-8") as f:
     script = json.load(f)
@@ -34,7 +35,7 @@ difficulty_color = {
 }
 
 
-class LeetCodeUtils(CogsExtension):
+class LeetCodeUtils(BaseClassMixin):
     async def _send_request_to_api(
         self,
         operation: str,
@@ -63,7 +64,7 @@ class LeetCodeUtils(CogsExtension):
         return response
 
     async def fetch_user_info(self, username: str) -> dict:
-        with open("queries/profile_page.graphql", encoding="utf-8") as file:
+        with Path("queries/profile_page.graphql").open(encoding="utf-8") as file:
             user_query = file.read()
 
         operation_name = [
@@ -87,14 +88,14 @@ class LeetCodeUtils(CogsExtension):
         """Send embed message with leetcode daily challenge data
         including title, difficulty, tags, link, etc.
         """
-        with open("queries/profile_page.graphql", encoding="utf-8") as file:
+        with Path("queries/profile_page.graphql").open(encoding="utf-8") as file:
             daily_challenge_query = file.read()
 
         response = await self._send_request_to_api("questionOfToday", query=daily_challenge_query)
         return response["data"]
 
     async def fetch_contest(self) -> list[UpcomingContest]:
-        with open("queries/feed.graphql", encoding="utf-8") as file:
+        with Path("queries/feed.graphql").open(encoding="utf-8") as file:
             contest_query = file.read()
 
         response = await self._send_request_to_api(
@@ -150,7 +151,7 @@ class ResponseFormatter:
         languages = "\n".join(
             [f"{item['languageName']}: {item['problemsSolved']}" for item in language_count]
         )
-        return await CogsExtension.create_embed(
+        return await BaseClassMixin.create_embed(
             matched_userprofile["realName"],
             description,
             Field(name="Recent AC", value=recent_ac, inline=False),
@@ -175,7 +176,7 @@ class ResponseFormatter:
         topic = ", ".join([tag["name"] for tag in question["topicTags"]])
         ac_rate = f'{question["acRate"]:.2f}%'
 
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             title,
             "Today's Leetcode Daily Challenge",
             Field(name="Question Link", value=f"[link]({link})", inline=False),
@@ -197,7 +198,7 @@ class ResponseFormatter:
         start_time = datetime.datetime.fromtimestamp(contest.startTime, tz=TZ)
         link = f"https://leetcode.com/contest/{contest.titleSlug}/"
 
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             contest.title,
             "Remember to participate in the contest!",
             Field(name="Start Time", value=start_time.strftime("%Y-%m-%d %H:%M:%S"), inline=False),

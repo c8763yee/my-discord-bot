@@ -14,8 +14,9 @@ from cogs.mygo.schema import SubtitleItem, engine
 from core.func import db_insert_episode, db_insert_subtitle_data, init_models
 from loggers import setup_package_logger
 
-if os.path.exists("env/bot.env"):
-    load_dotenv(dotenv_path="env/bot.env", verbose=True)
+env_path = Path.cwd() / "env" / "bot.env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path, verbose=True)
 
 logger = setup_package_logger("main", file_level=logging.INFO)
 

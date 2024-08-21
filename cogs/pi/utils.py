@@ -1,18 +1,20 @@
-import os
 import subprocess
 from datetime import datetime
 
 import psutil
 from discord import Color, Embed
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import TZ
 
 from .const import REBOOT_TEMPERATURE, TEMPERATURE_COMMAND, WARNING_TEMPERATURE
 
 
-class RaspberryPiUtils(CogsExtension):
+class TemperatureTooHighError(Exception): ...
+
+
+class RaspberryPiUtils(BaseClassMixin):
     @staticmethod
     def convert_to_gb(value: int) -> float:
         return value / 1024 / 1024 / 1024
@@ -25,11 +27,9 @@ class RaspberryPiUtils(CogsExtension):
 
         if temperature > REBOOT_TEMPERATURE:
             self.logger.warning("Temperature Too High: %s °C, Rebooting", temperature)
-            self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None))).send(
-                f"Temperature Too High: {temperature} °C, Rebooting"
-            )
-            os.system("sudo reboot")
-        elif temperature > WARNING_TEMPERATURE:
+            raise TemperatureTooHighError(f"Temperature Too High: {temperature} °C, Rebooting")
+
+        if temperature > WARNING_TEMPERATURE:
             message += f"Temperature High: {temperature} °C, Consider Rebooting or Cooling"
             self.logger.warning(message)
         else:
@@ -70,7 +70,7 @@ class RaspberryPiUtils(CogsExtension):
 class StatsFormatter:
     @staticmethod
     async def format_stats(stats: dict) -> Embed:
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             "Raspberry Pi Statistics",
             f'Current Time: {stats["now"]}',
             Field(name="CPU Usage", value=stats["cpu_usage"], inline=False),

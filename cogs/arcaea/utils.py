@@ -311,8 +311,8 @@ class APIUtils(ScoreUtils):
 
 class AssetFetcher:
     ROOT_PATH = Path("/opt/arcaea/assets")
-    with open(ROOT_PATH / "songs" / "songlist", encoding="utf-8") as songlist:
-        songlist = SongList.model_validate(json.load(songlist))
+    with (ROOT_PATH / "songs" / "songlist").open(encoding="utf-8") as file:
+        songlist = SongList.model_validate(json.load(file))
 
     songlist_map = {song.id: song for song in songlist.songs}
 

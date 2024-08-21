@@ -33,7 +33,7 @@ contest_remind_time = datetime.time(
 class LeetCodeTasks(CogsExtension):
     def __init__(self, bot):
         super().__init__(bot)
-        self.utils = LeetCodeUtils(bot)
+        self.utils = LeetCodeUtils()
 
     async def cog_load(self):
         self.fetch_daily_challenge.start()

@@ -13,4 +13,4 @@ from .utils import ChatGPTUtils
 class ChatGPTTasks(CogsExtension):
     def __init__(self, bot):
         super().__init__(bot)
-        self.utils = ChatGPTUtils(bot)
+        self.utils = ChatGPTUtils()
