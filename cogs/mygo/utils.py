@@ -23,9 +23,9 @@ class SubtitleUtils(CogsExtension):
     @staticmethod
     async def _check_frame_exist(episode: episodeChoices, *frames: int) -> list[bool]:
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
-        return list(map(lambda frame: 0 <= frame <= episope_data.total_frame, frames))
+        return list(map(lambda frame: 0 <= frame <= episode_data.total_frame, frames))
 
     @staticmethod
     async def get_total_frame_number(
@@ -61,14 +61,14 @@ class SubtitleUtils(CogsExtension):
             raise ValueError("Frame number must be positive")
 
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
         video_path = Path.home() / "mygo-anime" / f"{episode}.mp4"
         self.logger.info(f"Extracting frame {frame_number} from {video_path}")
 
         process = ffmpeg.input(
             video_path,
-            ss=self._frame_to_time(frame_number, episope_data.frame_rate),
+            ss=self._frame_to_time(frame_number, episode_data.frame_rate),
         ).output("pipe:", vframes=1, format="image2", vcodec="mjpeg")
         result, _ = process.run(capture_stdout=True)
 
@@ -97,7 +97,7 @@ class SubtitleUtils(CogsExtension):
         video_path = Path.home() / "mygo-anime" / f"{episode}.mp4"
         reverse = False
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
         if start_frame > end_frame:
             start_frame, end_frame = end_frame, start_frame
@@ -111,8 +111,8 @@ class SubtitleUtils(CogsExtension):
         # process palettegen and paletteuse
         input_stream = ffmpeg.input(
             video_path,
-            ss=self._frame_to_time(start_frame, episope_data.frame_rate),
-            to=self._frame_to_time(end_frame, episope_data.frame_rate),
+            ss=self._frame_to_time(start_frame, episode_data.frame_rate),
+            to=self._frame_to_time(end_frame, episode_data.frame_rate),
         )
         if reverse:
             input_stream = input_stream.filter("reverse")

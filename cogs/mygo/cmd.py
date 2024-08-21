@@ -16,7 +16,7 @@ class SubtitleCMD(CogsExtension):
         self.utils = SubtitleUtils(bot)
 
     # use custom prefix `!!!!!`
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def mygo(self, ctx: commands.Context):
         """Function to get frame of videos."""
 
