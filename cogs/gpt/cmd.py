@@ -10,7 +10,7 @@ from .utils import ChatGPTResponseFormatter
 
 
 class ChatGPTCMD(ChatGPTTasks):
-    @commands.hybrid_group(ephemeral=True)
+    @commands.hybrid_group(ephermal=True)
     async def chatgpt(self, _: commands.Context):
         """_description_
         dummy function to create a group command.

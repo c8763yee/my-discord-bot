@@ -123,7 +123,7 @@ class ChatGPTUtils(CogsExtension):
         return await chatbot.vision(text, image_url, model=model)
 
 
-class ChatGPTResponseFormatter:
+class ChatGPTResopnseFormatter:
     @classmethod
     async def usage(cls, usage: CompletionUsage) -> tuple[str, discord.Embed]:
         usage_embed = await CogsExtension.create_embed(

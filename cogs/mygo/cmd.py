@@ -1,7 +1,9 @@
+import json
 from io import BytesIO
 
 from discord import File
 from discord.ext import commands
+from pydantic.json import pydantic_encoder
 
 from cogs import CogsExtension
 
@@ -16,7 +18,7 @@ class SubtitleCMD(CogsExtension):
         self.utils = SubtitleUtils(bot)
 
     # use custom prefix `!!!!!`
-    @commands.hybrid_group(ephemeral=True)
+    @commands.hybrid_group(ephermal=True)
     async def mygo(self, ctx: commands.Context):
         """Function to get frame of videos."""
 
@@ -52,16 +54,14 @@ class SubtitleCMD(CogsExtension):
         ctx: commands.Context,
         query: str,
         episode: EpisodeChoices,
-        nth_page: int | None = 1,
+        nth_page: int | None = 1
     ):
-        """Search subtitles by query, then return the result as custom string."""
-        result: list[SentenceItem] = await self.utils.search_title_by_text(
-            query, episode, nth_page=nth_page
+        """Search subtitles by query."""
+        result = await self.utils.search_title_by_text(query, episode)
+        await ctx.send(
+            content=json.dumps(
+                result[:MAX_RESULTS], indent=2, default=pydantic_encoder, ensure_ascii=False
+            )
         )
 
-        await ctx.send(
-            f'Search result for "{query}" in episode {episode} (page {nth_page}):\n\n',
-            file=File(
-                BytesIO("\n".join(list(map(str, result))).encode()), filename="search_result.txt"
-            ),
-        )
+        # TODO: Implement pagination for search results
