@@ -24,7 +24,7 @@ class ArcaeaCMD(CogsExtension):
     async def cog_unload(self):
         await self.utils.unload()
 
-    @commands.hybrid_group(name="arc", ephermal=True)
+    @commands.hybrid_group(name="arc", ephemeral=True)
     async def arcaea(self, ctx: commands.Context):
         pass
 

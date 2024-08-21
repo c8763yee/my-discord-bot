@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from cogs import CogsExtension
 
+from .const import PAGED_BY
 from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
 from .types import episodeChoices
 
@@ -14,18 +15,17 @@ from .types import episodeChoices
 class SubtitleUtils(CogsExtension):
     @staticmethod
     def _frame_to_time(frame: int, frame_rate: float) -> str:
-        ms = frame / frame_rate * 1000
-        seconds = ms // 1000
+        seconds, ms = divmod(frame / frame_rate, 1)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms % 1000):03d}"
+        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * 1000):03d}"
 
     @staticmethod
     async def _check_frame_exist(episode: episodeChoices, *frames: int) -> list[bool]:
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
-        return list(map(lambda frame: 0 <= frame <= episope_data.total_frame, frames))
+        return list(map(lambda frame: 0 <= frame <= episode_data.total_frame, frames))
 
     @staticmethod
     async def get_total_frame_number(
@@ -61,15 +61,15 @@ class SubtitleUtils(CogsExtension):
             raise ValueError("Frame number must be positive")
 
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
         video_path = Path.home() / "mygo-anime" / f"{episode}.mp4"
         self.logger.info(f"Extracting frame {frame_number} from {video_path}")
 
         process = ffmpeg.input(
             video_path,
-            ss=self._frame_to_time(frame_number, episope_data.frame_rate),
-        ).output("pipe:", vframes=1, format="image2", vcodec="mjpeg", loglevel="quiet")
+            ss=self._frame_to_time(frame_number, episode_data.frame_rate),
+        ).output("pipe:", vframes=1, format="image2", vcodec="mjpeg")
         result, _ = process.run(capture_stdout=True)
 
         self.logger.debug(
@@ -97,7 +97,7 @@ class SubtitleUtils(CogsExtension):
         video_path = Path.home() / "mygo-anime" / f"{episode}.mp4"
         reverse = False
         async with AsyncSession(engine) as session:
-            episope_data = await session.get(EpisodeItem, episode)
+            episode_data = await session.get(EpisodeItem, episode)
 
         if start_frame > end_frame:
             start_frame, end_frame = end_frame, start_frame
@@ -111,13 +111,13 @@ class SubtitleUtils(CogsExtension):
         # process palettegen and paletteuse
         input_stream = ffmpeg.input(
             video_path,
-            ss=self._frame_to_time(start_frame, episope_data.frame_rate),
-            to=self._frame_to_time(end_frame, episope_data.frame_rate),
+            ss=self._frame_to_time(start_frame, episode_data.frame_rate),
+            to=self._frame_to_time(end_frame, episode_data.frame_rate),
         )
         if reverse:
-            input_stread = input_stream.filter("reverse")
+            input_stream = input_stream.filter("reverse")
 
-        split = input_stread.split()
+        split = input_stream.split()
         palette = split[0].filter("palettegen")
         process_palette = ffmpeg.filter([split[1], palette], "paletteuse")
 
@@ -128,14 +128,34 @@ class SubtitleUtils(CogsExtension):
         return BytesIO(result)
 
     @staticmethod
-    async def search_title_by_text(text: str, episode: episodeChoices) -> list[SentenceItem]:
+    async def search_title_by_text(
+        text: str, episode: episodeChoices, paged_by: int = PAGED_BY, nth_page: int = 1
+    ) -> list[SentenceItem]:
+        """(1-indexed).
+
+        Search subtitle by text and episode. and return paged result.
+
+        Assume that paged_by is always greater than 0 and nth_page is always greater than 0
+
+        Equivalent to:
+            SELECT * FROM sentence
+            WHERE episode = ${episode} AND text LIKE '%${text}%'
+            LIMIT ${paged_by} OFFSET ${paged_by * (nth_page - 1)}
+        """
+        assert paged_by > 0 and nth_page > 0, "Invalid Input"
+
         async with AsyncSession(engine) as session:
             episode_data = await session.get(EpisodeItem, episode)
-            sql_query = select(SentenceItem).where(
-                SentenceItem.episode == episode_data.episode,
-                column("text").contains(text),
+            sql_query = (
+                select(SentenceItem)
+                .where(
+                    SentenceItem.episode == episode_data.episode,
+                    column("text").contains(text),
+                )
+                .limit(paged_by)
+                .offset(paged_by * (nth_page - 1))
             )
 
-            results: list[EpisodeItem] = (await session.exec(sql_query)).all()
+            results: list[SentenceItem] = (await session.exec(sql_query)).all()
 
         return results
