@@ -10,5 +10,7 @@
   "ruff.codeAction.fixViolation": {
     "enable": true
   },
-  "ruff.lint.run": "onSave"
+  "ruff.lint.run": "onSave",
+  "taipyStudio.gUI.elementsFilePaths": [],
+  "cSpell.words": ["blurple", "diegetic", "extradata", "moderations", "mygo"]
 }

@@ -2,8 +2,8 @@ from pydantic import BaseModel, computed_field
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Field, SQLModel
 
-uri = "sqlite+aiosqlite:///mygo.sqlite"
-engine = create_async_engine(uri, echo=False)
+URI = "sqlite+aiosqlite:///mygo.sqlite"
+engine = create_async_engine(URI, echo=False)
 
 
 # --------------- SQL Model --------------- #

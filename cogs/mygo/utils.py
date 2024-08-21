@@ -8,7 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from cogs import CogsExtension
 
 from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
-from .types import episodeChoices
+from .types import EpisodeChoices
 
 
 class SubtitleUtils(CogsExtension):
@@ -21,7 +21,7 @@ class SubtitleUtils(CogsExtension):
         return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms % 1000):03d}"
 
     @staticmethod
-    async def _check_frame_exist(episode: episodeChoices, *frames: int) -> list[bool]:
+    async def _check_frame_exist(episode: EpisodeChoices, *frames: int) -> list[bool]:
         async with AsyncSession(engine) as session:
             episope_data = await session.get(EpisodeItem, episode)
 
@@ -29,7 +29,7 @@ class SubtitleUtils(CogsExtension):
 
     @staticmethod
     async def get_total_frame_number(
-        episode: episodeChoices,
+        episode: EpisodeChoices,
     ) -> FFProbeStream:
         r"""Get total frame number of video file.
 
@@ -47,7 +47,7 @@ class SubtitleUtils(CogsExtension):
 
     async def extract_frame(
         self,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         frame_number: int,
     ) -> BytesIO:
         r"""Extract frame from video file as BytesIO.
@@ -57,14 +57,15 @@ class SubtitleUtils(CogsExtension):
         """
         if all(await self._check_frame_exist(episode, frame_number)) is False:
             raise ValueError(f"Frame {frame_number} does not exist in episode {episode}")
-        elif frame_number < 0:
+
+        if frame_number < 0:
             raise ValueError("Frame number must be positive")
 
         async with AsyncSession(engine) as session:
             episope_data = await session.get(EpisodeItem, episode)
 
         video_path = Path.home() / "mygo-anime" / f"{episode}.mp4"
-        self.logger.info(f"Extracting frame {frame_number} from {video_path}")
+        self.logger.info("Extracting frame %d from %s", frame_number, video_path)
 
         process = ffmpeg.input(
             video_path,
@@ -73,13 +74,16 @@ class SubtitleUtils(CogsExtension):
         result, _ = process.run(capture_stdout=True)
 
         self.logger.debug(
-            f"Extracted frame {frame_number} from {video_path}: result={result[:100]}"
+            "Extracted frame %d from %s: result=%s",
+            frame_number,
+            video_path,
+            result[:100],
         )
         return BytesIO(result)
 
     async def extract_gif(
         self,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         start_frame: int,
         end_frame: int,
     ) -> BytesIO:
@@ -128,7 +132,22 @@ class SubtitleUtils(CogsExtension):
         return BytesIO(result)
 
     @staticmethod
-    async def search_title_by_text(text: str, episode: episodeChoices) -> list[SentenceItem]:
+    async def search_title_by_text(
+        text: str, episode: EpisodeChoices, paged_by: int = PAGED_BY, nth_page: int = 1
+    ) -> list[SentenceItem]:
+        """(1-indexed).
+
+        Search subtitle by text and episode. and return paged result.
+
+        Assume that paged_by is always greater than 0 and nth_page is always greater than 0
+
+        Equivalent to:
+            SELECT * FROM sentence
+            WHERE episode = ${episode} AND text LIKE '%${text}%'
+            LIMIT ${paged_by} OFFSET ${paged_by * (nth_page - 1)}
+        """
+        assert paged_by > 0 and nth_page > 0, "Invalid Input"
+        
         async with AsyncSession(engine) as session:
             episode_data = await session.get(EpisodeItem, episode)
             sql_query = select(SentenceItem).where(

@@ -7,8 +7,8 @@ from pydantic.json import pydantic_encoder
 
 from cogs import CogsExtension
 
-from .const import MAX_RESULTS
-from .types import episodeChoices
+from .schema import SentenceItem
+from .types import EpisodeChoices
 from .utils import SubtitleUtils
 
 
@@ -26,7 +26,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_frame(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         frame: int,
     ):
         """Get image at specific frame from video."""
@@ -37,7 +37,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_gif(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         start: int,
         end: int,
     ):
@@ -53,7 +53,8 @@ class SubtitleCMD(CogsExtension):
         self,
         ctx: commands.Context,
         query: str,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
+        nth_page: int | None = 1
     ):
         """Search subtitles by query."""
         result = await self.utils.search_title_by_text(query, episode)
