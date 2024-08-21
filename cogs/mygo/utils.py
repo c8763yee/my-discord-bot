@@ -14,11 +14,10 @@ from .types import episodeChoices
 class SubtitleUtils(CogsExtension):
     @staticmethod
     def _frame_to_time(frame: int, frame_rate: float) -> str:
-        ms = frame / frame_rate * 1000
-        seconds = ms // 1000
+        seconds, ms = divmod(frame / frame_rate, 1)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms % 1000):03d}"
+        return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * 1000):03d}"
 
     @staticmethod
     async def _check_frame_exist(episode: episodeChoices, *frames: int) -> list[bool]:
@@ -69,7 +68,7 @@ class SubtitleUtils(CogsExtension):
         process = ffmpeg.input(
             video_path,
             ss=self._frame_to_time(frame_number, episope_data.frame_rate),
-        ).output("pipe:", vframes=1, format="image2", vcodec="mjpeg", loglevel="quiet")
+        ).output("pipe:", vframes=1, format="image2", vcodec="mjpeg")
         result, _ = process.run(capture_stdout=True)
 
         self.logger.debug(
@@ -115,9 +114,9 @@ class SubtitleUtils(CogsExtension):
             to=self._frame_to_time(end_frame, episope_data.frame_rate),
         )
         if reverse:
-            input_stread = input_stream.filter("reverse")
+            input_stream = input_stream.filter("reverse")
 
-        split = input_stread.split()
+        split = input_stream.split()
         palette = split[0].filter("palettegen")
         process_palette = ffmpeg.filter([split[1], palette], "paletteuse")
 
@@ -136,6 +135,6 @@ class SubtitleUtils(CogsExtension):
                 column("text").contains(text),
             )
 
-            results: list[EpisodeItem] = (await session.exec(sql_query)).all()
+            results: list[SentenceItem] = (await session.exec(sql_query)).all()
 
         return results
