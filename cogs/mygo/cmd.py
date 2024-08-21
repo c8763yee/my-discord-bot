@@ -6,7 +6,7 @@ from discord.ext import commands
 from cogs import CogsExtension
 
 from .schema import SentenceItem
-from .types import episodeChoices
+from .types import EpisodeChoices
 from .utils import SubtitleUtils
 
 
@@ -16,7 +16,7 @@ class SubtitleCMD(CogsExtension):
         self.utils = SubtitleUtils(bot)
 
     # use custom prefix `!!!!!`
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def mygo(self, ctx: commands.Context):
         """Function to get frame of videos."""
 
@@ -24,7 +24,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_frame(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         frame: int,
     ):
         """Get image at specific frame from video."""
@@ -35,7 +35,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_gif(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         start: int,
         end: int,
     ):
@@ -51,7 +51,7 @@ class SubtitleCMD(CogsExtension):
         self,
         ctx: commands.Context,
         query: str,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         nth_page: int | None = 1,
     ):
         """Search subtitles by query, then return the result as custom string."""

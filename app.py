@@ -42,8 +42,8 @@ class Bot(commands.Bot):
             silent=True,
         )
 
-        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as f:
-            data = SubtitleItem.model_validate_json(f.read())
+        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as file:
+            data = SubtitleItem.model_validate_json(file.read())
 
         await init_models()
 
