@@ -137,6 +137,7 @@ class SubtitleUtils(CogsExtension):
         episode: EpisodeChoices | None = None,
         paged_by: int = PAGED_BY,
         nth_page: int = 1,
+
     ) -> list[SentenceItem]:
         """(1-indexed).
 
@@ -150,7 +151,6 @@ class SubtitleUtils(CogsExtension):
             LIMIT ${paged_by} OFFSET ${paged_by * (nth_page - 1)}
         """
         assert paged_by > 0 and nth_page > 0, "Invalid Input"
-
         async with AsyncSession(engine) as session:
             sql_query = (
                 select(SentenceItem)
