@@ -12,10 +12,10 @@ class CogsExtension(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.logger = setup_package_logger(f"{self.__module__}.{self.__class__.__name__}")
-        self.logger.info(f"Loading: {self.__module__}.{self.__class__.__name__}")
+        self.logger.info("Loading: %s.%s", self.__module__, self.__class__.__name__)
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        self.logger.error(f"Error in command `{ctx.command.qualified_name}`:\n{error}")
+        self.logger.error("Error in command `%s`:\n%s", ctx.command.qualified_name, error)
         self.logger.exception(error)
 
         await ctx.send(
@@ -25,7 +25,7 @@ class CogsExtension(commands.Cog):
     async def cog_app_command_error(
         self, interaction: discord.Interaction[discord.Client], error: AppCommandError
     ) -> None:
-        self.logger.error(f"Error in command `{interaction.command.qualified_name}`:\n{error}")
+        self.logger.error("Error in command `%s`:\n%s", interaction.command.qualified_name, error)
         self.logger.exception(error)
 
         await interaction.response.send_message(

@@ -387,4 +387,4 @@ class ArcaeaResponseFormatter:
         return embed, username, thumbnail, song_cover
 
 
-AssetFetcher.logger = setup_package_logger(AssetFetcher.__qualname__)
+AssetFetcher.logger = setup_package_logger(f"{AssetFetcher.__module__}.AssetFetcher")

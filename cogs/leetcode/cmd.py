@@ -6,7 +6,7 @@ from .utils import ResponseFormatter
 
 class LeetCodeCMD(LeetCodeTasks):
     # methods(commands)
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def leetcode(self, ctx: commands.Context):
         """Dummy function to create a group command."""
 

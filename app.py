@@ -42,8 +42,8 @@ class Bot(commands.Bot):
             silent=True,
         )
 
-        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as f:
-            data = SubtitleItem.model_validate_json(f.read())
+        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as file:
+            data = SubtitleItem.model_validate_json(file.read())
 
         await init_models()
 
@@ -53,9 +53,9 @@ class Bot(commands.Bot):
         await db_insert_subtitle_data(data)
 
 
-# ---------------------------- Initialising the bot ---------------------------- #
+# ---------------------------- Initializing the bot ---------------------------- #
 bot = Bot(
-    command_prefix=commands.when_mentioned_or("!", "?", "hey siri, "),
+    command_prefix=commands.when_mentioned_or("!", "?", "hey SiRi, ", "!!!!!"),
     intents=discord.Intents.all(),
     help_command=commands.DefaultHelpCommand(dm_help=True),
     description="A bot for my Discord server.",

@@ -44,7 +44,7 @@ class DifficultyValidator(BaseModel):
         return values
 
     @model_validator(mode="after")
-    def depercated_values(cls, values: "Difficulty") -> "Difficulty":
+    def deprecated_values(cls, values: "Difficulty") -> "Difficulty":
         deprecated_fields = ["plusFingers"]
         for field in deprecated_fields:
             if getattr(values, field, None) is not None:

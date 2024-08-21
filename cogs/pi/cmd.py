@@ -11,7 +11,7 @@ class RaspberryPiCMD(RaspberryPiTasks):
         super().__init__(bot)
         self.utils = RaspberryPiUtils(bot)
 
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def pi(self, ctx: commands.Context):
         pass
 

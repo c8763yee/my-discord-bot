@@ -3,12 +3,11 @@ from io import BytesIO
 
 from discord import File
 from discord.ext import commands
-from pydantic.json import pydantic_encoder
 
 from cogs import CogsExtension
 
-from .const import MAX_RESULTS
-from .types import episodeChoices
+from .schema import SentenceItem
+from .types import EpisodeChoices
 from .utils import SubtitleUtils
 
 
@@ -18,7 +17,7 @@ class SubtitleCMD(CogsExtension):
         self.utils = SubtitleUtils(bot)
 
     # use custom prefix `!!!!!`
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def mygo(self, ctx: commands.Context):
         """Function to get frame of videos."""
 
@@ -26,7 +25,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_frame(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         frame: int,
     ):
         """Get image at specific frame from video."""
@@ -37,7 +36,7 @@ class SubtitleCMD(CogsExtension):
     async def extract_gif(
         self,
         ctx: commands.Context,
-        episode: episodeChoices,
+        episode: EpisodeChoices,
         start: int,
         end: int,
     ):
@@ -53,14 +52,24 @@ class SubtitleCMD(CogsExtension):
         self,
         ctx: commands.Context,
         query: str,
-        episode: episodeChoices,
+        episode: EpisodeChoices | None = None,
+        nth_page: int | None = 1,
     ):
-        """Search subtitles by query."""
-        result = await self.utils.search_title_by_text(query, episode)
-        await ctx.send(
-            content=json.dumps(
-                result[:MAX_RESULTS], indent=2, default=pydantic_encoder, ensure_ascii=False
-            )
+        """Search subtitles by query, then return the result as custom string."""
+        results: list[SentenceItem] = await self.utils.search_title_by_text(
+            query, episode, nth_page=nth_page
         )
 
-        # TODO: Implement pagination for search results
+        await ctx.send(
+            f'Search result for "{query}" in episode {episode} (page {nth_page}):\n\n',
+            file=File(
+                BytesIO(
+                    json.dumps(
+                        [result.model_dump() for result in results],
+                        indent=2,
+                        ensure_ascii=False,
+                    ).encode()
+                ),
+                filename=f"{episode}-{query}.json",
+            ),
+        )

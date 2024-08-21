@@ -6,11 +6,11 @@ from discord.ext import commands
 from config import OpenAIConfig
 
 from .tasks import ChatGPTTasks
-from .utils import ChatGPTResopnseFormatter
+from .utils import ChatGPTResponseFormatter
 
 
 class ChatGPTCMD(ChatGPTTasks):
-    @commands.hybrid_group(ephermal=True)
+    @commands.hybrid_group(ephemeral=True)
     async def chatgpt(self, _: commands.Context):
         """_description_
         dummy function to create a group command.
@@ -30,7 +30,7 @@ class ChatGPTCMD(ChatGPTTasks):
     ):
         await ctx.interaction.response.defer()
         answer, usage = await self.utils.ask(question, model=model)
-        usage_embed = await ChatGPTResopnseFormatter.usage(usage)
+        usage_embed = await ChatGPTResponseFormatter.usage(usage)
         return await ctx.interaction.followup.send(answer, embed=usage_embed)
 
     @chatgpt.command("dalle")
@@ -54,5 +54,5 @@ class ChatGPTCMD(ChatGPTTasks):
     ):
         await ctx.interaction.response.defer()
         vision_response, usage = await self.utils.vision(text, image.url, model=model)
-        usage_embed = await ChatGPTResopnseFormatter.usage(usage)
+        usage_embed = await ChatGPTResponseFormatter.usage(usage)
         return await ctx.interaction.followup.send(vision_response, embed=usage_embed)
