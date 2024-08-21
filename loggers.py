@@ -15,7 +15,6 @@ FORMAT_PATTERN = dedent("""
                """)
 
 
-logging.basicConfig(level=logging.NOTSET, handlers=None)
 TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 
@@ -68,11 +67,6 @@ def setup_package_logger(
     log_full_path.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
-    console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
-
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(console_level)
-    console_handler.setFormatter(console_formatter)
 
     file_handler = RotatingFileHandler(
         filename=log_full_path.with_suffix(".log"),
@@ -81,6 +75,13 @@ def setup_package_logger(
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
     package_logger = logging.getLogger(package_name)
-    package_logger.addHandler(console_handler)
     package_logger.addHandler(file_handler)
     return package_logger
+
+
+console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(console_formatter)
+
+logging.basicConfig(level=logging.NOTSET, handlers=[console_handler])
