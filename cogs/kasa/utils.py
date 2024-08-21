@@ -6,7 +6,8 @@ import discord
 from aiomqtt import Client
 from dotenv import load_dotenv
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
+from core.models import Field
 
 if os.path.exists("env/mqtt.env"):
     load_dotenv("env/mqtt.env", verbose=True)
@@ -15,7 +16,7 @@ MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))
 
 
-class KasaUtils(CogsExtension):
+class KasaUtils:
     async def get_power_usage(self, plug_id: int) -> dict:
         async with Client(MQTT_BROKER, MQTT_PORT) as client:
             plug_url_suffix = f"/{plug_id}" if plug_id != 0 else ""
@@ -63,21 +64,17 @@ class KasaUtils(CogsExtension):
         return f"Toggled plug {plug_id}"
 
 
-class KasaResponseFormatter:
+class KasaResponseFormatter(BaseClassMixin):
     @classmethod
     async def format_power_usage(cls, payload: dict) -> discord.Embed:
-        return (
-            discord.Embed(
-                title="Power Usage Report",
-                description=f"Power usage of the plug: {payload['name']}(ID: {payload['id']})",
-                color=(
-                    discord.Color.green() if payload["status"] else discord.Color.from_rgb(0, 0, 0)
-                ),
-            )
-            .add_field(name="Total Energy(kWh)", value=payload["total_wh"], inline=False)
-            .add_field(name="Voltage(V)", value=payload["V"], inline=True)
-            .add_field(name="Current(A)", value=payload["A"], inline=True)
-            .add_field(name="Power(W)", value=payload["W"], inline=True)
+        return cls.create_embed(
+            "Power Usage Report",
+            f"Power usage of the plug: {payload['name']}(ID: {payload['id']})",
+            Field(name="Total Energy(kWh)", value=payload["total_wh"]),
+            Field(name="Voltage(V)", value=payload["V"]),
+            Field(name="Current(A)", value=payload["A"]),
+            Field(name="Power(W)", value=payload["W"]),
+            color=(discord.Color.green() if payload["status"] else discord.Color.from_rgb(0, 0, 0)),
         )
 
     @classmethod
@@ -86,4 +83,5 @@ class KasaResponseFormatter:
         for payload in payloads.values():
             embed = await cls.format_power_usage(payload)
             embeds.append(embed)
+
         return embeds

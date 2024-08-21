@@ -9,7 +9,7 @@ from .utils import RaspberryPiUtils, StatsFormatter
 class RaspberryPiCMD(RaspberryPiTasks):
     def __init__(self, bot):
         super().__init__(bot)
-        self.utils = RaspberryPiUtils(bot)
+        self.utils = RaspberryPiUtils()
 
     @commands.hybrid_group(ephemeral=True)
     async def pi(self, ctx: commands.Context):

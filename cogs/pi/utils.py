@@ -5,14 +5,14 @@ from datetime import datetime
 import psutil
 from discord import Color, Embed
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import TZ
 
 from .const import REBOOT_TEMPERATURE, TEMPERATURE_COMMAND, WARNING_TEMPERATURE
 
 
-class RaspberryPiUtils(CogsExtension):
+class RaspberryPiUtils(BaseClassMixin):
     @staticmethod
     def convert_to_gb(value: int) -> float:
         return value / 1024 / 1024 / 1024
@@ -70,7 +70,7 @@ class RaspberryPiUtils(CogsExtension):
 class StatsFormatter:
     @staticmethod
     async def format_stats(stats: dict) -> Embed:
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             "Raspberry Pi Statistics",
             f'Current Time: {stats["now"]}',
             Field(name="CPU Usage", value=stats["cpu_usage"], inline=False),

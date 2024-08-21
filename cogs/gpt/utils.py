@@ -8,11 +8,11 @@ from openai.types.chat import ChatCompletion
 
 from cogs import CogsExtension
 from config import OpenAIConfig
+from core.classes import BaseClassMixin
 from core.models import Field
-from loggers import setup_package_logger
 
 
-class ChatGPT:
+class ChatGPT(BaseClassMixin):
     """A chatbot based on OpenAI's chat API
     if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
     """
@@ -30,14 +30,14 @@ class ChatGPT:
     client = openai.AsyncOpenAI()
 
     def __init__(self):
+        super().__init__()
         self._history = [self.behavior]
 
-    @classmethod
-    async def detect_malicious_content(cls, prompt: str) -> bool:
-        response = await cls.client.moderations.create(input=prompt)
+    async def detect_malicious_content(self, prompt: str) -> bool:
+        response = await self.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        cls.logger.info("Moderation result: %s", result)
+        self.logger.info("Moderation result: %s", result.model_dump_json(indent=2))
         return result.flagged or any(
             cate is True for cate in result.categories.model_dump().values()
         )
@@ -51,7 +51,7 @@ class ChatGPT:
         response = await self.client.chat.completions.create(
             messages=self._history, max_tokens=max_tokens, model=model, **kwargs
         )
-        self.logger.debug("ChatGPT Response: %s", response)
+        self.logger.info("ChatGPT Response: %s", response.model_dump_json(indent=2))
         return response
 
     async def ask(self, prompt: str, **open_kwargs) -> tuple[str, CompletionUsage]:
@@ -62,18 +62,17 @@ class ChatGPT:
         response = await self._send_message(**open_kwargs)
         return response.choices[0].message.content, response.usage
 
-    @classmethod
     async def create_images(
-        cls,
+        self,
         prompt: str,
         model: str,
         quality: str = OpenAIConfig.IMAGE_QUALITY,
         size: str = OpenAIConfig.IMAGE_SIZE,
     ) -> list[Image]:
-        if await cls.detect_malicious_content(prompt):
+        if await self.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
 
-        results = await cls.client.images.generate(
+        results = await self.client.images.generate(
             prompt=prompt, model=model, quality=quality, size=size
         )
         return results.data
@@ -102,15 +101,15 @@ class ChatGPT:
         return await self.ask(vision_prompt, model=model)
 
 
-class ChatGPTUtils(CogsExtension):
+class ChatGPTUtils:
+    chatbot = ChatGPT()
+
     async def ask(self, question: str, model: str) -> str:
-        chatbot = ChatGPT()
-        answer, token_usage = await chatbot.ask(question, model=model)
+        answer, token_usage = await self.chatbot.ask(question, model=model)
         return answer, token_usage
 
     async def generate_image(self, prompt: str, model: str) -> str:
-        chatbot = ChatGPT()
-        images = await chatbot.create_images(prompt=prompt, model=model)
+        images = await self.chatbot.create_images(prompt=prompt, model=model)
         return images[0].url
 
     async def vision(
@@ -119,8 +118,7 @@ class ChatGPTUtils(CogsExtension):
         image_url: str,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
     ) -> str:
-        chatbot = ChatGPT()
-        return await chatbot.vision(text, image_url, model=model)
+        return await self.chatbot.vision(text, image_url, model=model)
 
 
 class ChatGPTResponseFormatter:
@@ -138,6 +136,3 @@ class ChatGPTResponseFormatter:
         )
 
         return usage_embed
-
-
-ChatGPT.logger = setup_package_logger(f"{ChatGPT.__module__}.{ChatGPT.__name__}")

@@ -14,7 +14,7 @@ from .utils import SubtitleUtils
 class SubtitleCMD(CogsExtension):
     def __init__(self, bot):
         super().__init__(bot)
-        self.utils = SubtitleUtils(bot)
+        self.utils = SubtitleUtils()
 
     # use custom prefix `!!!!!`
     @commands.hybrid_group(ephemeral=True)
@@ -54,7 +54,6 @@ class SubtitleCMD(CogsExtension):
         query: str,
         episode: EpisodeChoices | None = None,
         nth_page: int | None = 1,
-
     ):
         """Search subtitles by query, then return the result as custom string."""
         results: list[SentenceItem] = await self.utils.search_title_by_text(

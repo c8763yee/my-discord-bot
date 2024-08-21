@@ -10,7 +10,7 @@ from aiohttp import ClientSession, ContentTypeError
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import TZ
 
@@ -34,7 +34,7 @@ difficulty_color = {
 }
 
 
-class LeetCodeUtils(CogsExtension):
+class LeetCodeUtils(BaseClassMixin):
     async def _send_request_to_api(
         self,
         operation: str,
@@ -150,7 +150,7 @@ class ResponseFormatter:
         languages = "\n".join(
             [f"{item['languageName']}: {item['problemsSolved']}" for item in language_count]
         )
-        return await CogsExtension.create_embed(
+        return await BaseClassMixin.create_embed(
             matched_userprofile["realName"],
             description,
             Field(name="Recent AC", value=recent_ac, inline=False),
@@ -175,7 +175,7 @@ class ResponseFormatter:
         topic = ", ".join([tag["name"] for tag in question["topicTags"]])
         ac_rate = f'{question["acRate"]:.2f}%'
 
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             title,
             "Today's Leetcode Daily Challenge",
             Field(name="Question Link", value=f"[link]({link})", inline=False),
@@ -197,7 +197,7 @@ class ResponseFormatter:
         start_time = datetime.datetime.fromtimestamp(contest.startTime, tz=TZ)
         link = f"https://leetcode.com/contest/{contest.titleSlug}/"
 
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             contest.title,
             "Remember to participate in the contest!",
             Field(name="Start Time", value=start_time.strftime("%Y-%m-%d %H:%M:%S"), inline=False),

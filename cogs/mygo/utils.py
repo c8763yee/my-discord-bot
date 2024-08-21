@@ -5,14 +5,14 @@ import ffmpeg
 from sqlmodel import column, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from cogs import CogsExtension
+from core.classes import BaseClassMixin
 
 from .const import PAGED_BY
 from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
 from .types import EpisodeChoices
 
 
-class SubtitleUtils(CogsExtension):
+class SubtitleUtils(BaseClassMixin):
     @staticmethod
     def _frame_to_time(frame: int, frame_rate: float) -> str:
         seconds, ms = divmod(frame / frame_rate, 1)
@@ -125,9 +125,9 @@ class SubtitleUtils(CogsExtension):
         palette = split[0].filter("palettegen")
         process_palette = ffmpeg.filter([split[1], palette], "paletteuse")
 
-        result, _ = process_palette.output(
-            "pipe:", vcodec="gif", format="gif", loglevel="quiet"
-        ).run(capture_stdout=True)
+        result, _ = process_palette.output("pipe:", vcodec="gif", format="gif").run(
+            capture_stdout=True
+        )
 
         return BytesIO(result)
 
@@ -137,7 +137,6 @@ class SubtitleUtils(CogsExtension):
         episode: EpisodeChoices | None = None,
         paged_by: int = PAGED_BY,
         nth_page: int = 1,
-
     ) -> list[SentenceItem]:
         """(1-indexed).
 
