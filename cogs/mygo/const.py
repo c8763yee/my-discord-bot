@@ -1,1 +1,1 @@
-PAGED_BY: int = 20
+MAX_RESULTS: int = 20

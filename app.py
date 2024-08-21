@@ -55,7 +55,7 @@ class Bot(commands.Bot):
 
 # ---------------------------- Initialising the bot ---------------------------- #
 bot = Bot(
-    command_prefix=commands.when_mentioned_or("!", "?", "hey SiRi, ", "!!!!!"),
+    command_prefix=commands.when_mentioned_or("!", "?", "hey siri, "),
     intents=discord.Intents.all(),
     help_command=commands.DefaultHelpCommand(dm_help=True),
     description="A bot for my Discord server.",

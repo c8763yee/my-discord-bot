@@ -8,7 +8,7 @@ from .utils import KasaResponseFormatter
 
 class KasaCMD(KasaTasks):
     # methods(commands)
-    @commands.hybrid_group(ephemeral=True)
+    @commands.hybrid_group(ephermal=True)
     async def kasa(self, ctx: commands.Context):
         """Dummy function to create a group command."""
 
