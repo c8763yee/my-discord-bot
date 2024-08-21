@@ -27,11 +27,10 @@ class ChatGPT(BaseClassMixin):
         ),
     }
 
-    client = openai.AsyncOpenAI()
-
-    def __init__(self):
+    def __init__(self, **openai_kwargs):
         super().__init__()
         self._history = [self.behavior]
+        self.client = openai.AsyncOpenAI(**openai_kwargs)
 
     async def detect_malicious_content(self, prompt: str) -> bool:
         response = await self.client.moderations.create(input=prompt)
@@ -102,7 +101,8 @@ class ChatGPT(BaseClassMixin):
 
 
 class ChatGPTUtils:
-    chatbot = ChatGPT()
+    def __init__(self):
+        self.chatbot = ChatGPT()
 
     async def ask(self, question: str, model: str) -> str:
         answer, token_usage = await self.chatbot.ask(question, model=model)

@@ -63,11 +63,9 @@ def setup_package_logger(
         console_level (int): The log level for the console handler.
 
     """
-    # package_path_elements = package_name.split(".")
-    # log_directory_path = Path(*package_path_elements[:-1])
-    # logger_name = package_path_elements[-1]
-    # (Path("logs") / log_directory_path).mkdir(parents=True, exist_ok=True, mode=0o777)
     log_full_path = Path("logs") / Path(*(package_name.split(".")))
+
+    log_full_path.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
     console_formatter = ColoredFormatter(fmt=FORMAT_PATTERN)
@@ -75,8 +73,6 @@ def setup_package_logger(
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(console_level)
     console_handler.setFormatter(console_formatter)
-
-    # logfile_name = f"logs/{log_directory_path}/{logger_name}.log".replace("//", "/")
 
     file_handler = RotatingFileHandler(
         filename=log_full_path.with_suffix(".log"),
