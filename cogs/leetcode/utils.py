@@ -138,10 +138,10 @@ class ResponseFormatter:
         # ------------------------------------------------
         rating = dedent(
             f"""
-            attempts: {rating_info.get('attendedContestsCount', 'N/A')}
+            attempts: {rating_info.get("attendedContestsCount", "N/A")}
             Rank: {rank_text}
-            Rating: {rating_info.get('rating', 'N/A')}
-            Top %: {rating_info.get('topPercentage', 100):.2f}%
+            Rating: {rating_info.get("rating", "N/A")}
+            Top %: {rating_info.get("topPercentage", 100):.2f}%
             """
         )
 
