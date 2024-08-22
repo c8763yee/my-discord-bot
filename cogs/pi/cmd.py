@@ -7,8 +7,8 @@ from .utils import RaspberryPiUtils, StatsFormatter, TemperatureTooHighError
 
 
 class RaspberryPiCMD(RaspberryPiTasks):
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(bot, *args, **kwargs)
         self.utils = RaspberryPiUtils()
 
     @commands.hybrid_group(ephemeral=True)

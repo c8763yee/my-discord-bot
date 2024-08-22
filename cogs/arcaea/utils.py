@@ -7,10 +7,10 @@ from pathlib import Path
 import aiohttp
 from discord import Color, Embed, File
 
+from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import setup_package_logger
 
-from .. import CogsExtension
 from .const import (
     BELOW_EX_SCORE_DELTA,
     DIFFICULTY_ABBR,
@@ -365,7 +365,7 @@ class ArcaeaResponseFormatter:
         rating = str(rating_val) if rating_val > 0 else "Too low to calculate"
 
         username = result["username"]
-        embed = await CogsExtension.create_embed(
+        embed = await BaseClassMixin.create_embed(
             f"User: {username}\nRecent Play Info",
             f"{result['title']['ja']} [{DIFFICULTY_ABBR[difficulty]}]「{GRADE_NAMES[grade]}」",
             Field(

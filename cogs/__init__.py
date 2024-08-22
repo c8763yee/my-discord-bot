@@ -8,14 +8,12 @@ from loggers import setup_package_logger
 __all__ = ("leetcode", "pi", "kasa", "gpt", "arcaea", "mygo")
 
 
-class CogsExtension(commands.Cog, BaseClassMixin):
+class CogsExtension(BaseClassMixin, commands.Cog):
     cogs_logger = setup_package_logger("cogs")
 
-    def __init__(self, bot):
-        super(BaseClassMixin, self).__init__()
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.bot: commands.Bot = bot
-        self.logger = setup_package_logger(f"{self.__class__.__module__}.{self.__class__.__name__}")
-        self.logger.info("Loaded class %s.%s", self.__class__.__module__, self.__class__.__name__)
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         self.cogs_logger.error(

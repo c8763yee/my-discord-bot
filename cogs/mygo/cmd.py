@@ -12,8 +12,8 @@ from .utils import SubtitleUtils
 
 
 class SubtitleCMD(CogsExtension):
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(bot, *args, **kwargs)
         self.utils = SubtitleUtils()
 
     # use custom prefix `!!!!!`
