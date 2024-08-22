@@ -26,8 +26,8 @@ class ChatGPT(BaseClassMixin):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *_, **kwargs):
+        super().__init__()
         self._history = [self.behavior]
         self.client = openai.AsyncOpenAI(**kwargs)
 
