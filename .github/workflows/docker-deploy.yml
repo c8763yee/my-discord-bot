@@ -17,9 +17,9 @@ jobs:
       - name: export secret as JSON to .env
         env:
           DEBUG: "False"
+          ALL_SECRETS: ${{ toJson(secrets) }}
         run: |
-          sudo apt install jq -y
-          echo ${{ toJson(secrets) }} | jq -r 'to_entries|map("export \(.key | ascii_upcase)=\(.value | @sh)")|.[]' > .env
+          echo "$ALL_SECRETS" |  jq -r 'to_entries | .[] | select(.key | startswith("github_") | not) | "\(.key |ascii_upcase)=\(.value | @sh)"' > .env
           ./setup.sh
 
       - name: Build Docker image
