@@ -6,7 +6,6 @@ import openai
 from openai.types import CompletionUsage, Image
 from openai.types.chat import ChatCompletion
 
-from cogs import CogsExtension
 from config import OpenAIConfig
 from core.classes import BaseClassMixin
 from core.models import Field
@@ -27,10 +26,10 @@ class ChatGPT(BaseClassMixin):
         ),
     }
 
-    def __init__(self, **openai_kwargs):
+    def __init__(self, *_, **kwargs):
         super().__init__()
         self._history = [self.behavior]
-        self.client = openai.AsyncOpenAI(**openai_kwargs)
+        self.client = openai.AsyncOpenAI(**kwargs)
 
     async def detect_malicious_content(self, prompt: str) -> bool:
         response = await self.client.moderations.create(input=prompt)
@@ -124,7 +123,7 @@ class ChatGPTUtils:
 class ChatGPTResponseFormatter:
     @classmethod
     async def usage(cls, usage: CompletionUsage) -> tuple[str, discord.Embed]:
-        usage_embed = await CogsExtension.create_embed(
+        usage_embed = await BaseClassMixin.create_embed(
             "ChatGPT Usage Information",
             "In this response, the usage information of the ChatGPT API is included.",
             Field(name="completion_tokens", value=usage.completion_tokens),

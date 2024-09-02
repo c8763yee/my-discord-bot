@@ -7,9 +7,9 @@ from textwrap import dedent
 
 import discord
 from aiohttp import ClientSession, ContentTypeError
-from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from core import load_env
 from core.classes import BaseClassMixin
 from core.models import Field
 from loggers import TZ
@@ -17,9 +17,7 @@ from loggers import TZ
 from .const import API_URL, THUMBNAIL_URL
 from .schema import UpcomingContest, UpcomingContestsResponse
 
-env_path = Path.cwd() / "env" / "bot.env"
-if env_path.exists():
-    load_dotenv(dotenv_path=env_path, verbose=True)
+load_env(path=Path.cwd() / "env" / "bot.env")
 
 with (Path.cwd() / "json_data" / "secret.json").open("r", encoding="utf-8") as f:
     script = json.load(f)
@@ -138,10 +136,10 @@ class ResponseFormatter:
         # ------------------------------------------------
         rating = dedent(
             f"""
-            attempts: {rating_info.get('attendedContestsCount', 'N/A')}
+            attempts: {rating_info.get("attendedContestsCount", "N/A")}
             Rank: {rank_text}
-            Rating: {rating_info.get('rating', 'N/A')}
-            Top %: {rating_info.get('topPercentage', 100):.2f}%
+            Rating: {rating_info.get("rating", "N/A")}
+            Top %: {rating_info.get("topPercentage", 100):.2f}%
             """
         )
 

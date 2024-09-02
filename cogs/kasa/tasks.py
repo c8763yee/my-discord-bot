@@ -17,8 +17,8 @@ daily_report_time = datetime.time(
 
 class KasaTasks(CogsExtension):
     # variables
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(bot, *args, **kwargs)
         self.utils = KasaUtils()
 
     async def cog_load(self):

@@ -52,7 +52,7 @@ class RaspberryPiUtils(BaseClassMixin):
         disk_total = self.convert_to_gb(psutil.disk_usage("/").total)
 
         disk_text = f"""
-        Percentage: {psutil.disk_usage('/').percent}%
+        Percentage: {psutil.disk_usage("/").percent}%
         Used: ({disk_used:.2f}GB / {disk_total:.2f}GB)
         """
 

@@ -11,6 +11,6 @@ from .utils import ChatGPTUtils
 
 
 class ChatGPTTasks(CogsExtension):
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(bot, *args, **kwargs)
         self.utils = ChatGPTUtils()

@@ -1,64 +1,6 @@
-from textwrap import dedent
+from pydantic import BaseModel, computed_field
 
-from pydantic import BaseModel, ConfigDict, computed_field
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlmodel import Field, SQLModel
-
-URI = "sqlite+aiosqlite:///mygo.sqlite"
-engine = create_async_engine(URI, echo=False)
-
-
-# --------------- SQL Model --------------- #
-class BaseSQLModel(SQLModel):
-    __abstract__ = True
-    __table_args__ = {"extend_existing": True}
-
-
-class EpisodeItem(BaseSQLModel, table=True):
-    __tablename__ = "episode"
-    model_config = ConfigDict(title=__tablename__)
-
-    episode: str = Field(primary_key=True)
-    total_frame: int
-    frame_rate: float
-
-
-class SentenceItem(BaseSQLModel, table=True):
-    def __str__(self):
-        return dedent(
-            f"""
-            Episode: {self.episode}
-            Frame Start: {self.frame_start}
-            Frame End: {self.frame_end}
-            Text: {self.text}
-
-            -----------------
-            command:
-                <prefix>mygo gif {self.episode} {self.frame_start} {self.frame_end}
-                <prefix>mygo frame {self.episode} <number in {self.frame_start} ~ {self.frame_end}>
-
-            """
-        )
-
-    __tablename__ = "sentence"
-    model_config = ConfigDict(title=__tablename__)
-
-    text: str
-    episode: str
-    frame_start: int
-    frame_end: int
-    segment_id: int = Field(default=None, primary_key=True)
-
-    @computed_field
-    @property
-    def gif_command(self) -> str:
-        return f"mygo gif {self.episode} {self.frame_start} {self.frame_end}"
-
-    @computed_field
-    @property
-    def frame_command(self) -> str:
-        return f"mygo frame {self.episode} <number in {self.frame_start} ~ {self.frame_end}>"
-
+from database import SentenceItem
 
 # --------------- Pydantic Model --------------- #
 

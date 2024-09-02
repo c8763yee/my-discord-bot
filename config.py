@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 
@@ -13,4 +14,4 @@ class OpenAIConfig:
 
 
 class Config:
-    DEBUG = True
+    DEBUG = str(os.getenv("DEBUG", "False")).lower() == "true"

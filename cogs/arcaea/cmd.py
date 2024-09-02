@@ -2,15 +2,13 @@ import os
 from pathlib import Path
 
 from discord.ext import commands
-from dotenv import load_dotenv
 
 from cogs import CogsExtension
+from core import load_env
 
 from .utils import APIUtils, ArcaeaResponseFormatter
 
-env_path = Path.cwd() / "env" / "arcaea.env"
-if env_path.exists():
-    load_dotenv(dotenv_path=env_path, verbose=True)
+load_env(path=Path.cwd() / "env" / "arcaea.env")
 
 
 class ArcaeaCMD(CogsExtension):

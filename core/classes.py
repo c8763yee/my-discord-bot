@@ -6,7 +6,8 @@ from .models import Field
 
 
 class BaseClassMixin:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.logger = setup_package_logger(f"{self.__module__}.{self.__class__.__name__}")
         self.logger.info("Loading: %s.%s", self.__module__, self.__class__.__name__)
 

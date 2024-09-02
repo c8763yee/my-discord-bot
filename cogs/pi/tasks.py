@@ -19,8 +19,8 @@ per_clock = [
 
 
 class RaspberryPiTasks(CogsExtension):
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot, *args, **kwargs):
+        super().__init__(bot, *args, **kwargs)
         self.utils = RaspberryPiUtils()
 
     async def cog_load(self):

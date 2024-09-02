@@ -6,9 +6,10 @@ from sqlmodel import column, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.classes import BaseClassMixin
+from database import EpisodeItem, SentenceItem, engine
 
 from .const import HEIGHT, HOUR, MICROSECOND, MINUTE, PAGED_BY, SECOND
-from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
+from .schema import FFProbeResponse, FFProbeStream
 from .types import EpisodeChoices
 
 
@@ -17,8 +18,7 @@ class SubtitleUtils(BaseClassMixin):
     def _frame_to_time(frame: int, frame_rate: float) -> str:
         total_seconds, ms = divmod(frame / frame_rate, SECOND)
         minutes, seconds = divmod(total_seconds, MINUTE)
-        hours, _ = divmod(minutes, HOUR)
-
+        hours, minutes = divmod(minutes, HOUR // MINUTE)
         return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * MICROSECOND):03d}"
 
     @staticmethod
