@@ -19,7 +19,7 @@ jobs:
           DEBUG: "False"
         run: |
           sudo apt install jq -y
-          echo ${{ toJson(secrets) }} | jq 'to_entries|map("\(.key | ascii_upcase)=\(.value | @sh)")|.[]' > .env
+          echo ${{ toJson(secrets) }} | jq -r 'to_entries|map("export \(.key | ascii_upcase)=\(.value | @sh)")|.[]' > .env
           ./setup.sh
 
       - name: Build Docker image
