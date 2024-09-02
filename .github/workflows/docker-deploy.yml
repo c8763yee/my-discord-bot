@@ -14,21 +14,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: export secret as JSON to .env
+        env:
+          DEBUG: "False"
+        run: |
+          sudo apt install jq -y
+          echo ${{ toJson(secrets) }} | jq 'to_entries|map("\(.key | ascii_upcase)=\(.value | @sh)")|.[]' > .env
+          ./setup.sh
+
       - name: Build Docker image
         run: |
           docker compose -f docker-compose-ci.yml down
           docker build -t bot .
 
+      - name: Initialize alembic
+        run: |
+          alembic revision --autogenerate -m "Auto-generate migration"
+          alembic upgrade head
+
       - name: Deploy to Docker with secret
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          OWNER_ID: ${{ secrets.OWNER_ID }}
-          TEST_CHANNEL_ID: ${{ secrets.TEST_CHANNEL_ID }}
-          LEETCODE_CSRFTOKEN: ${{ secrets.LEETCODE_CSRFTOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MQTT_BROKER: ${{ secrets.MQTT_BROKER }}
-          ARCAEA_EMAIL: ${{ secrets.ARCAEA_EMAIL }}
-          ARCAEA_PASSWORD: ${{ secrets.ARCAEA_PASSWORD }}
         run: docker compose -f docker-compose-ci.yml up -d
 
       - name: Clean up

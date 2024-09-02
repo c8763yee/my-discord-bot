@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from cogs.mygo.schema import BaseSQLModel, SentenceItem, SubtitleItem
 from core.func import db_insert_subtitle_data
+from database import BaseSQLModel, SentenceItem, SubtitleItem
 
 
 # ------------------------------- fixture -------------------------------

@@ -8,21 +8,12 @@ services:
     volumes:
       - ./logs:/app/logs:rw
       - /opt/arcaea/assets:/opt/arcaea/assets
-      - /home/c8763yee/mygo-anime:/home/user/mygo-anime
-
-    networks:
-      test_bot_net:
-        ipv4_address: 172.18.0.2
+      - $HOME/mygo-anime:/home/user/mygo-anime
     user: user
     environment:
-      - FILE_API_URL=172.18.0.3
-
+      - IS_DOCKER=True
+      - DEBUG=True
+      - MYSQL_HOST=host.docker.internal
     restart: on-failure:10
-
-networks:
-  test_bot_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.18.0.0/16
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

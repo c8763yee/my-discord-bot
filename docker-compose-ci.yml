@@ -1,38 +1,16 @@
 services:
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    extends:
+      file: docker-compose.yml
+      service: test_bot
     image: bot
     container_name: bot
-    networks:
-      bot:
-        ipv4_address: 172.18.0.2
     volumes:
-      - ./logs:/app/logs:rw
-      - /usr/bin:/usr/bin # Mount the /usr/bin directory
-      - /opt/arcaea/assets:/opt/arcaea/assets
-      - /home/c8763yee/mygo-anime:/home/user/mygo-anime
+      - /usr/bin:/usr/bin # Additional volume mount not in base
     devices:
       # Mount the /dev/vcio device for the Raspberry Pi
       - /dev/vcio
-    environment:
-      - LD_LIBRARY_PATH=/usr/lib
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - OWNER_ID=${OWNER_ID}
-      - TEST_CHANNEL_ID=${TEST_CHANNEL_ID}
-      - LEETCODE_CSRFTOKEN=${LEETCODE_CSRFTOKEN}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MQTT_BROKER=${MQTT_BROKER}
-      - ARCAEA_EMAIL=${ARCAEA_EMAIL}
-      - ARCAEA_PASSWORD=${ARCAEA_PASSWORD}
-      - FILE_API_URL=172.18.0.3
-    restart: on-failure:10
 
-networks:
-  bot:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.18.0.0/16
+    environment:
+      - DEBUG=False
+    restart: on-failure:10

@@ -6,19 +6,14 @@ from time import perf_counter
 
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
-from sqlmodel import SQLModel
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 import cogs
 from cogs.arcaea.utils import APIUtils
-from cogs.mygo.schema import SubtitleItem, engine
-from core.func import db_insert_episode, db_insert_subtitle_data, init_models
+from core import load_env
+from core.func import init
 from loggers import setup_package_logger
 
-env_path = Path.cwd() / "env" / "bot.env"
-if env_path.exists():
-    load_dotenv(dotenv_path=env_path, verbose=True)
+load_env(path=Path.cwd() / "env" / "bot.env")
 
 logger = setup_package_logger("main", file_level=logging.INFO)
 
@@ -29,6 +24,7 @@ class Bot(commands.Bot):
         self.logger: logging.Logger = setup_package_logger("main.bot", file_level=logging.INFO)
 
     async def on_ready(self):
+        await init()
         channel = self.get_channel(int(os.environ["TEST_CHANNEL_ID"]))
 
         for modules in cogs.__all__:
@@ -40,25 +36,12 @@ class Bot(commands.Bot):
             )
 
         await self.tree.sync()
-        async with engine.begin() as conn:
-            await conn.run_sync(SQLModel.metadata.create_all)
 
         # mention owner when ready
         await channel.send(
             f"{self.user} is ready. <@{os.environ['OWNER_ID']}>",
             silent=True,
         )
-
-        with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as file:
-            data = SubtitleItem.model_validate_json(file.read())
-
-        await init_models()
-
-        async with AsyncSession(engine) as session:
-            for episode in ["1-3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]:
-                await db_insert_episode(episode, session)
-
-            await db_insert_subtitle_data(data, session)
 
 
 # ---------------------------- Initializing the bot ---------------------------- #

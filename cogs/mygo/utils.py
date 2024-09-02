@@ -6,9 +6,10 @@ from sqlmodel import column, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.classes import BaseClassMixin
+from database import EpisodeItem, SentenceItem, engine
 
 from .const import HEIGHT, HOUR, MICROSECOND, MINUTE, PAGED_BY, SECOND
-from .schema import EpisodeItem, FFProbeResponse, FFProbeStream, SentenceItem, engine
+from .schema import FFProbeResponse, FFProbeStream
 from .types import EpisodeChoices
 
 

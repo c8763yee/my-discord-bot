@@ -5,16 +5,14 @@ from pathlib import Path
 
 import discord
 from aiomqtt import Client
-from dotenv import load_dotenv
 
+from core import load_env
 from core.classes import BaseClassMixin
 from core.models import Field
 
 from .const import MQTTQoS, PlugID
 
-env_path = Path.cwd() / "env" / "mqtt.env"
-if env_path.exists():
-    load_dotenv(dotenv_path=env_path, verbose=True)
+load_env(path=Path.cwd() / "env" / "mqtt.env")
 
 MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))

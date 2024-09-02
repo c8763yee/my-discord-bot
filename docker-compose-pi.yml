@@ -1,31 +1,10 @@
 services:
   test_bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: test_bot
-    container_name: test_bot
+    extends:
+      file: docker-compose.yml
+      service: test_bot
     volumes:
-      - ./logs:/app/logs:rw
-      - /usr/bin:/usr/bin # Mount the /usr/bin directory
-      - /opt/arcaea/assets:/opt/arcaea/assets
-      - /home/c8763yee/mygo-anime:/home/user/mygo-anime
-
+      - /usr/bin:/usr/bin # Additional volume mount not in base
     devices:
       # Mount the /dev/vcio device for the Raspberry Pi
       - /dev/vcio
-    networks:
-      test_bot_net:
-        ipv4_address: 172.18.0.2
-    user: user
-    environment:
-      - LD_LIBRARY_PATH=/usr/lib
-      - FILE_API_URL=172.18.0.3
-
-networks:
-  test_bot_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.18.0.0/16

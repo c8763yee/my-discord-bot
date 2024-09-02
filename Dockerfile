@@ -13,7 +13,9 @@ RUN apt-get update -y && \
         libomxil-bellagio-dev \
         libvpx-dev \
         libx264-dev \
-        libx265-dev && \
+        libx265-dev \
+        ffmpeg \
+        && \
     apt-get clean && \
     pip install --no-cache-dir -r /tmp/requirements.txt && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \

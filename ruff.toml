@@ -34,6 +34,7 @@ ignore = [
     "D400",   # First line should end with a period
     "D401",   # First line of docstring should be in imperative mood
     "RUF012", # mutable default values in class attributes
+    "D415"    #
 ]
 
 [format]

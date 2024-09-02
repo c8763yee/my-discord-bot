@@ -1,11 +1,13 @@
+import json
 from base64 import b64encode as be
 from pathlib import Path
 
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from cogs.mygo.schema import EpisodeItem, SentenceItem, SubtitleItem, engine
+from cogs.mygo.schema import SubtitleItem
 from cogs.mygo.utils import SubtitleUtils
+from database import EpisodeItem, SentenceItem, engine
 
 
 def encode_image_to_b64(image_path: str | Path | bytes) -> str:
@@ -50,3 +52,20 @@ async def db_insert_episode(episode: str, session: AsyncSession, update: bool = 
     elif old_row is None:
         session.add(insert_item)
     await session.commit()
+
+
+async def init():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+    with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as file:
+        # data = SubtitleItem.model_validate_json(file.read())
+        data = SubtitleItem.model_validate(json.load(file))
+
+    await init_models()
+
+    async with AsyncSession(engine) as session:
+        for episode in ["1-3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]:
+            await db_insert_episode(episode, session)
+
+        await db_insert_subtitle_data(data, session)
