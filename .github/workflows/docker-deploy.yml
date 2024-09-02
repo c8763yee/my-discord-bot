@@ -27,11 +27,6 @@ jobs:
           docker compose -f docker-compose-ci.yml down
           docker build -t bot .
 
-      - name: Initialize alembic
-        run: |
-          alembic revision --autogenerate -m "Auto-generate migration"
-          alembic upgrade head
-
       - name: Deploy to Docker with secret
         run: docker compose -f docker-compose-ci.yml up -d
 

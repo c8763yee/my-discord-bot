@@ -18,4 +18,13 @@ EOF
     echo "MariaDB database initialized with database: '${MYSQL_DATABASE}' and user: '${MYSQL_USER}'"
 }
 
-setup_mariadb
+function setup_alembic(){
+    sudo mariadb -u root -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE} <<EOF
+    DROP TABLE IF EXISTS alembic_version;
+EOF
+    echo "Alembic table dropped"
+    echo "Running alembic revision and upgrade..."
+    rm -rf migrate/versions/*
+    alembic revision --autogenerate -m "Auto generated revision" && alembic upgrade head
+}
+setup_mariadb && setup_alembic
