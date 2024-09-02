@@ -17,8 +17,7 @@ class SubtitleUtils(BaseClassMixin):
     def _frame_to_time(frame: int, frame_rate: float) -> str:
         total_seconds, ms = divmod(frame / frame_rate, SECOND)
         minutes, seconds = divmod(total_seconds, MINUTE)
-        hours, _ = divmod(minutes, HOUR)
-
+        hours, minutes = divmod(minutes, HOUR // MINUTE)
         return f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}.{int(ms * MICROSECOND):03d}"
 
     @staticmethod
