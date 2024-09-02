@@ -2,6 +2,7 @@
 # use .env if in production($DEBUG="True", case insensitive) otherwise env/db.env
 # ENV_PATH=[[ $DEBUG == "True" ]] && echo ".env" || echo "env/db.env"
 ENV_PATH=$([[ $(echo $DEBUG | tr '[:upper:]' '[:lower:]') == "true" ]] && echo "env/db.env" || echo ".env")
+ALEMBIC_PATH=$HOME/alembic_venv/bin/alembic
 
 source $ENV_PATH
 function setup_mariadb(){
@@ -19,12 +20,17 @@ EOF
 }
 
 function setup_alembic(){
+    if [[ ! -d $ALEMBIC_PATH ]]; then
+      echo "Alembic not found, create virtual environment and install alembic"
+      python3 -m venv $HOME/alembic_venv
+      $HOME/alembic_venv/bin/pip install alembic sqlmodel aiomysql python-dotenv
+    fi
     sudo mariadb -u root -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE} <<EOF
     DROP TABLE IF EXISTS alembic_version;
 EOF
     echo "Alembic table dropped"
     echo "Running alembic revision and upgrade..."
     rm -rf migrate/versions/*
-    alembic revision --autogenerate -m "Auto generated revision" && alembic upgrade head
+    $ALEMBIC_PATH revision --autogenerate -m "Auto generated revision" && $ALEMBIC_PATH upgrade head
 }
 setup_mariadb && setup_alembic
