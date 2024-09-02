@@ -19,7 +19,7 @@ jobs:
           DEBUG: "False"
           ALL_SECRETS: ${{ toJson(secrets) }}
         run: |
-          echo "$ALL_SECRETS" | jq -r 'to_entries | startswith("github_") | not) | map("export \(.key | ascii_upcase)=\(.value | @sh)")|.[]' > .env
+          echo "$ALL_SECRETS" |  jq -r 'to_entries | .[] | select(.key | startswith("github_") | not) | "\(.key |ascii_upcase)=\(.value | @sh)"' > .env
           ./setup.sh
 
       - name: Build Docker image
