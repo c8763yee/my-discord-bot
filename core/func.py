@@ -39,21 +39,20 @@ async def db_insert_subtitle_data(data: SubtitleItem, session: AsyncSession, upd
             old_row.sqlmodel_update(item.model_dump(exclude_unset=True))
             session.add(old_row)
             data.result[i] = old_row  # prevent duplicate insert
+
         elif old_row is None:
             session.add(item)
+
         else:
             data.result[i] = None
 
     await session.commit()
     for item in data.result:
+        # ignore non-inserted or updated items
         if item is None:
             continue
 
-        try:
-            await session.refresh(item)
-        except Exception as e:
-            logger.error(f"Error: {e!r} - item: {item.model_dump_json(indent=2)}")
-            raise e
+        await session.refresh(item)
 
 
 async def db_insert_episode(episode: str, session: AsyncSession, update: bool = False):
@@ -77,7 +76,6 @@ async def init():
         await conn.run_sync(SQLModel.metadata.create_all)
 
     with (Path.cwd() / "json_data" / "mygo_detail.json").open("r", encoding="utf-8") as file:
-        # data = SubtitleItem.model_validate_json(file.read())
         data = SubtitleItem.model_validate(json.load(file))
 
     await init_models()

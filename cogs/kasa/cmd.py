@@ -8,7 +8,6 @@ from .utils import KasaResponseFormatter
 
 
 class KasaCMD(KasaTasks):
-    # methods(commands)
     @commands.hybrid_group(ephemeral=True)
     async def kasa(self, ctx: commands.Context):
         """Dummy function to create a group command."""
@@ -29,6 +28,7 @@ class KasaCMD(KasaTasks):
         await ctx.interaction.response.defer()
         if plug_ids is None:  # default to all plugs
             plug_ids = list(PlugID)
+
         payloads = await self.utils.get_power_usage_multiple(plug_ids)
         embeds = await KasaResponseFormatter.format_power_usage_multiple(payloads)
         await ctx.interaction.followup.send(

@@ -8,9 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Field, SQLModel
 
 from core import load_env
-from loggers import setup_package_logger
 
-db_logger = setup_package_logger("database")
 load_env(Path.cwd() / "env" / "db.env")
 DATABASE_URL: str = (
     "mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}"
@@ -21,7 +19,6 @@ DATABASE_URL: str = (
     MYSQL_DATABASE=os.getenv("MYSQL_DATABASE", "default"),
 )
 engine = create_async_engine(DATABASE_URL, echo=False)
-db_logger.debug(f"DATABASE_URL: {DATABASE_URL}")
 
 
 # --------------- SQL Model --------------- #
@@ -31,7 +28,7 @@ class BaseSQLModel(SQLModel):
     ID: int = Field(primary_key=True)
 
 
-# --------------- mygo --------------- #
+# --------------- MyGO --------------- #
 class EpisodeItem(BaseSQLModel, table=True):
     __tablename__ = "episode"
     model_config = ConfigDict(title=__tablename__)

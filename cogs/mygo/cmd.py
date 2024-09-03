@@ -88,6 +88,8 @@ class SubtitleCMD(CogsExtension):
         await ctx.interaction.response.defer()
         result = await self.utils.get_item_by_segment_id(segment_id)
         file: BytesIO | None = None
+        filename: str | None = None
+
         if result is None:
             raise commands.BadArgument(f"Segment ID {segment_id} not found.")
 
