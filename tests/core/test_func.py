@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -22,7 +20,7 @@ async def session_fixture():
         yield session
 
     await engine.dispose()
-    os.remove("test.db")  # noqa: PTH107 (Path.unlink not work for async session fixture)
+    # os.remove("test.db")  # (Path.unlink not work for async session fixture)
 
 
 @pytest_asyncio.fixture(scope="function")

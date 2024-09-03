@@ -8,6 +8,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from cogs.mygo.schema import SubtitleItem
 from cogs.mygo.utils import SubtitleUtils
 from database import EpisodeItem, SentenceItem, engine
+from loggers import setup_package_logger
+
+logger = setup_package_logger("core.func")
 
 
 def encode_image_to_b64(image_path: str | Path | bytes) -> str:
@@ -27,17 +30,30 @@ async def init_models():
 
 
 async def db_insert_subtitle_data(data: SubtitleItem, session: AsyncSession, update: bool = False):
-    for item in data.result:
+    for i, item in enumerate(data.result):
+        # Update if sentence already exists (via segment_id)
+        # NOTE: ID is auto-incremented, so we can't use it to check for duplicates
         if (
             old_row := await session.get(SentenceItem, item.segment_id)
         ) is not None and update is True:
-            old_row.sqlmodel_update(item)
+            old_row.sqlmodel_update(item.model_dump(exclude_unset=True))
             session.add(old_row)
-
+            data.result[i] = old_row  # prevent duplicate insert
         elif old_row is None:
             session.add(item)
+        else:
+            data.result[i] = None
 
     await session.commit()
+    for item in data.result:
+        if item is None:
+            continue
+
+        try:
+            await session.refresh(item)
+        except Exception as e:
+            logger.error(f"Error: {e!r} - item: {item.model_dump_json(indent=2)}")
+            raise e
 
 
 async def db_insert_episode(episode: str, session: AsyncSession, update: bool = False):
@@ -51,7 +67,9 @@ async def db_insert_episode(episode: str, session: AsyncSession, update: bool = 
 
     elif old_row is None:
         session.add(insert_item)
+
     await session.commit()
+    await session.refresh(old_row if old_row is not None else insert_item)
 
 
 async def init():

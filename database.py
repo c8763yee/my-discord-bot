@@ -28,6 +28,7 @@ db_logger.debug(f"DATABASE_URL: {DATABASE_URL}")
 class BaseSQLModel(SQLModel):
     __abstract__ = True
     __table_args__ = {"extend_existing": True}
+    ID: int = Field(primary_key=True)
 
 
 # --------------- mygo --------------- #
@@ -35,7 +36,7 @@ class EpisodeItem(BaseSQLModel, table=True):
     __tablename__ = "episode"
     model_config = ConfigDict(title=__tablename__)
 
-    episode: str = Field(primary_key=True)
+    episode: str
     total_frame: int
     frame_rate: float
 
@@ -64,7 +65,7 @@ class SentenceItem(BaseSQLModel, table=True):
     episode: str
     frame_start: int
     frame_end: int
-    segment_id: int = Field(default=None, primary_key=True)
+    segment_id: int
 
     @computed_field
     @property
@@ -80,7 +81,6 @@ class SentenceItem(BaseSQLModel, table=True):
 # --------------- Kasa --------------- #
 class Emeter(BaseSQLModel):
     __abstract__ = True
-    ID: int = Field(primary_key=True)
     create_time: datetime.datetime = Field(default=datetime.datetime.now())
     name: str = Field(nullable=False)
     status: bool = Field(nullable=False)
