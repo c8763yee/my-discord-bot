@@ -1,3 +1,4 @@
+import datetime
 import os
 from pathlib import Path
 from textwrap import dedent
@@ -74,3 +75,44 @@ class SentenceItem(BaseSQLModel, table=True):
     @property
     def frame_command(self) -> str:
         return f"mygo frame {self.episode} <number in {self.frame_start} ~ {self.frame_end}>"
+
+
+# --------------- Kasa --------------- #
+class Emeter(BaseSQLModel):
+    __abstract__ = True
+    ID: int = Field(primary_key=True)
+    create_time: datetime.datetime = Field(default=datetime.datetime.now())
+    name: str = Field(nullable=False)
+    status: bool = Field(nullable=False)
+    voltage: float = Field(nullable=False, alias="V")
+    current: float = Field(nullable=False, alias="A")
+    power: float = Field(nullable=False, alias="W")
+    total_wh: float = Field(nullable=False)
+
+
+class HS300(Emeter, table=True):
+    __tablename__ = "hs300"
+
+
+class PC(Emeter, table=True):
+    __tablename__ = "pc"
+
+
+class ScreenFHD(Emeter, table=True):
+    __tablename__ = "screen_fhd"
+
+
+class Screen2K(Emeter, table=True):
+    __tablename__ = "screen_2k"
+
+
+class NintendoSwitch(Emeter, table=True):
+    __tablename__ = "switch"
+
+
+class PhoneCharge(Emeter, table=True):
+    __tablename__ = "phone"
+
+
+class RaspberryPi(Emeter, table=True):
+    __tablename__ = "pi"

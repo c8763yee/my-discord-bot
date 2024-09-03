@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from collections.abc import Iterable
@@ -5,17 +6,26 @@ from pathlib import Path
 
 import discord
 from aiomqtt import Client
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core import load_env
 from core.classes import BaseClassMixin
 from core.models import Field
+from database import (
+    HS300,
+    Emeter,
+    engine,
+)
 
-from .const import MQTTQoS, PlugID
+from .const import MQTTQoS, PlugID, plug_mapping
 
 load_env(path=Path.cwd() / "env" / "mqtt.env")
 
 MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))
+
+TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 
 class KasaUtils:
@@ -74,6 +84,36 @@ class KasaUtils:
 
         return f"Toggled plug: {plug_id!s}"
 
+    async def get_daily_power_usage(self, plug_id: PlugID) -> Emeter:
+        async with AsyncSession(engine) as session:
+            table = plug_mapping.get(plug_id, HS300)
+
+            # get all data from the plug within 24HR
+            query = select(table).where(
+                table.ID == plug_id,
+                table.create_time >= datetime.datetime.now(TZ) - datetime.timedelta(days=1),
+            )
+            result = (await session.exec(query)).all()
+            if not result:  # return empty data if no record found
+                return Emeter(
+                    name=table.__tablename__,
+                    status=False,
+                    voltage=0,
+                    current=0,
+                    power=0,
+                    total_wh=0,
+                )
+
+            return Emeter(
+                # For status and total_wh, we only need the last record
+                name=table.__tablename__,
+                status=result[-1].status,
+                voltage=sum(item.voltage for item in result),
+                current=sum(item.current for item in result),
+                power=sum(item.power for item in result),
+                total_wh=result[-1].total_wh,
+            )
+
 
 class KasaResponseFormatter(BaseClassMixin):
     @classmethod
@@ -96,3 +136,15 @@ class KasaResponseFormatter(BaseClassMixin):
             embeds.append(embed)
 
         return embeds
+
+    @classmethod
+    async def format_daily_usage(cls, data: Emeter) -> discord.Embed:
+        return await cls.create_embed(
+            "Daily Power Usage Report",
+            f"Today you used {data.W} Wh of electricity",
+            Field(name="Total Energy(kWh)", value=data.total_wh),
+            Field(name="Voltage(V)", value=data.voltage),
+            Field(name="Current(A)", value=data.current),
+            Field(name="Power(W)", value=data.power),
+            color=(discord.Color.green() if data.status else discord.Color.from_rgb(0, 0, 0)),
+        )
