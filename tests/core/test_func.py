@@ -22,7 +22,8 @@ async def session_fixture():
         yield session
 
     await engine.dispose()
-    os.remove("test.db")  # noqa: PTH107 (Path.unlink not work for async session fixture)
+    # (Path.unlink not working for async session fixture)
+    os.remove("test.db")  # noqa: PTH107
 
 
 @pytest_asyncio.fixture(scope="function")

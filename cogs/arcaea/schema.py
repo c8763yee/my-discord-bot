@@ -137,13 +137,11 @@ class SongsValidator(BaseModel):
         if DifficultyEnum.BEYOND not in current_diff:
             songs.byd_local_unlock = None
 
-        # if {3, 4}.issubset(current_diff):
         if DifficultyEnum.BEYOND in current_diff and DifficultyEnum.ETERNAL in current_diff:
             raise ValueError(
                 f"ratingClass 3 and 4 cannot be present at the same time in {songs.id}"
             )
 
-        # if {0, 1, 2}.difference(current_diff):  # if any of them is not present
         base_difference = {
             DifficultyEnum.PAST,
             DifficultyEnum.PRESENT,
