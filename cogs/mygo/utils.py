@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 import ffmpeg
-from sqlmodel import column, select
+from sqlmodel import col, column, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.classes import BaseClassMixin
@@ -146,7 +146,7 @@ class SubtitleUtils(BaseClassMixin):
         episode: EpisodeChoices | None = None,
         paged_by: int = PAGED_BY,
         nth_page: int = 1,
-    ) -> list[SentenceItem]:
+    ) -> tuple[list[SentenceItem], int]:
         """(1-indexed).
 
         Search subtitle by text and episode. and return paged result.
@@ -172,5 +172,18 @@ class SubtitleUtils(BaseClassMixin):
                 sql_query = sql_query.where(SentenceItem.episode == episode)
 
             results: list[SentenceItem] = (await session.exec(sql_query)).all()
+            # get total count of found items
+            total_count = (
+                await session.exec(
+                    select(func.count(col(SentenceItem.segment_id))).where(
+                        SentenceItem.text.contains(text),
+                    )
+                )
+            ).one()
 
-        return results
+        return results, total_count
+
+    @staticmethod
+    async def get_item_by_segment_id(segment_id: int) -> SentenceItem:
+        async with AsyncSession(engine) as session:
+            return await session.get(SentenceItem, segment_id)
