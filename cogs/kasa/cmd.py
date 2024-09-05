@@ -16,7 +16,7 @@ class KasaCMD(KasaTasks):
     async def kasa_daily_usage(self, ctx: commands.Context, plug_id: PlugID):
         await ctx.interaction.response.defer()
         daily_kwh = await self.utils.get_daily_power_usage(plug_id)
-        await ctx.send(f"Daily power usage of plug {plug_id!s}: {daily_kwh}W")
+        await ctx.send(f"Daily power usage of plug {plug_id!s}: {daily_kwh} kWh")
 
     @kasa.command("emeter")
     async def kasa_emeter(self, ctx: commands.Context, plug_id: PlugID):
