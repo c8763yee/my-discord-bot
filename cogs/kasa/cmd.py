@@ -10,14 +10,20 @@ from .utils import KasaResponseFormatter
 class KasaCMD(KasaTasks):
     @commands.hybrid_group(ephemeral=True)
     async def kasa(self, ctx: commands.Context):
-        """Dummy function to create a group command."""
+        """Commands for Kasa smart plugs"""
+
+    @kasa.command("daily_usage")
+    async def kasa_daily_usage(self, ctx: commands.Context, plug_id: PlugID):
+        await ctx.interaction.response.defer()
+        daily_kwh = await self.utils.get_daily_power_usage(plug_id)
+        await ctx.send(f"Daily power usage of plug {plug_id!s}: {daily_kwh}W")
 
     @kasa.command("emeter")
     async def kasa_emeter(self, ctx: commands.Context, plug_id: PlugID):
         await ctx.interaction.response.defer()
         payload = await self.utils.get_power_usage(plug_id)
         embed = await KasaResponseFormatter.format_power_usage(payload)
-        await ctx.send(f"Power usage of plug {plug_id}", embed=embed)
+        await ctx.send(f"Power usage of plug {plug_id!s}", embed=embed)
 
     @kasa.command("emeters")
     async def kasa_emeters(

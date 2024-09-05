@@ -6,10 +6,10 @@ from discord.ext import tasks
 from cogs import CogsExtension
 
 from .const import PlugID
-from .utils import KasaResponseFormatter, KasaUtils
+from .utils import KasaUtils
 
 daily_report_time = datetime.time(
-    hour=10,
+    hour=12,
     minute=0,
     second=0,
     tzinfo=datetime.timezone(datetime.timedelta(hours=8)),
@@ -31,7 +31,12 @@ class KasaTasks(CogsExtension):
     @tasks.loop(time=daily_report_time)
     async def power_report(self):
         channel = self.bot.get_channel(int(os.getenv("TEST_CHANNEL_ID", None)))
+        watts = {}
         for plug_id in PlugID:
-            payload = await self.utils.get_daily_power_usage(plug_id)
-            embed = await KasaResponseFormatter.format_power_usage(payload)
-            await channel.send(f"<@{os.environ['OWNER_ID']}> Daily power usage report", embed=embed)
+            daily_kwh = await self.utils.get_daily_power_usage(plug_id)
+            watts[plug_id] = daily_kwh
+        await channel.send(
+            "Daily power usage report for all plugs\n```\n"
+            + "\n".join([f"Plug {plug_id}: {kwh} kWh" for plug_id, kwh in watts.items()])
+            + "\n```"
+        )
