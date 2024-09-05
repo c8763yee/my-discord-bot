@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Field, SQLModel
 
 from core import load_env
+from loggers import TZ
 
 load_env(Path.cwd() / "env" / "db.env")
 DATABASE_URL: str = (
-    "mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}"
+    "mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}?charset=UTF8mb4"
 ).format(
     MYSQL_USER=os.getenv("MYSQL_USER", "root"),
     MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD", "root"),
@@ -24,9 +25,16 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 # --------------- SQL Model --------------- #
 class BaseSQLModel(SQLModel):
     __abstract__ = True
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = {
+        "extend_existing": True,
+        "mysql_charset": "utf8mb4",
+        "mysql_default_charset": "utf8mb4"
+    }
+    
     ID: int = Field(primary_key=True)
-
+    create_time: datetime.datetime = Field(default_factory=lambda : datetime.datetime.now(TZ))
+    
+    
 
 # --------------- MyGO --------------- #
 class EpisodeItem(BaseSQLModel, table=True):
@@ -78,7 +86,6 @@ class SentenceItem(BaseSQLModel, table=True):
 # --------------- Kasa --------------- #
 class Emeter(BaseSQLModel):
     __abstract__ = True
-    create_time: datetime.datetime = Field(default=datetime.datetime.now())
     name: str = Field(nullable=False)
     status: bool = Field(nullable=False)
     voltage: float = Field(nullable=False, alias="V")
