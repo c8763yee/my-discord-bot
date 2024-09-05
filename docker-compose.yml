@@ -13,6 +13,7 @@ services:
     environment:
       - IS_DOCKER=True
       - DEBUG=True
+      - TZ=Asia/Taipei
       - MYSQL_HOST=host.docker.internal
     restart: on-failure:10
     extra_hosts:
