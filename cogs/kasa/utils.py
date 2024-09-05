@@ -22,7 +22,7 @@ from .const import MQTTQoS, PlugID, plug_mapping
 
 load_env(path=Path.cwd() / "env" / "mqtt.env")
 
-MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")
+MQTT_BROKER: str = os.environ.get("MQTT_BROKER", "localhost")  # use default mosquitto broker config
 MQTT_PORT: int = int(os.environ.get("MQTT_PORT", 1883))
 
 TZ = datetime.timezone(datetime.timedelta(hours=8))
@@ -84,35 +84,21 @@ class KasaUtils:
 
         return f"Toggled plug: {plug_id!s}"
 
-    async def get_daily_power_usage(self, plug_id: PlugID) -> Emeter:
+    async def get_daily_power_usage(self, plug_id: PlugID) -> float:
         async with AsyncSession(engine) as session:
             table = plug_mapping.get(plug_id, HS300)
 
             # get all data from the plug within 24HR
             query = select(table).where(
-                table.ID == plug_id,
-                table.create_time >= datetime.datetime.now(TZ) - datetime.timedelta(days=1),
+                table.create_time >= datetime.datetime.now(TZ) - datetime.timedelta(days=1)
             )
+            # log the query as sql statement
             result = (await session.exec(query)).all()
-            if not result:  # return empty data if no record found
-                return Emeter(
-                    name=table.__tablename__,
-                    status=False,
-                    voltage=0,
-                    current=0,
-                    power=0,
-                    total_wh=0,
-                )
+            if not result:  # return -1 if no record found
+                return -1.0
 
-            return Emeter(
-                # For status and total_wh, we only need the last record
-                name=table.__tablename__,
-                status=result[-1].status,
-                voltage=sum(item.voltage for item in result),
-                current=sum(item.current for item in result),
-                power=sum(item.power for item in result),
-                total_wh=result[-1].total_wh,
-            )
+            # calculate the total power usage within 24HR(5s interval) in kWh
+            return sum(item.power for item in result) / 1000 * 5
 
 
 class KasaResponseFormatter(BaseClassMixin):
