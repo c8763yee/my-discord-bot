@@ -67,7 +67,7 @@ async def db_insert_episode(episode: str, session: AsyncSession, update: bool = 
         episode=episode, total_frame=data.total_frame, frame_rate=data.frame_rate
     )
     if (old_row := await session.get(EpisodeItem, episode)) is not None and update is True:
-        old_row.sqlmodel_update(insert_item.model_dump(include=["total_frame", "frame_rate"]))
+        old_row.sqlmodel_update(insert_item.model_dump(include=["episode", "total_frame", "frame_rate"]))
         session.add(old_row)
 
     elif old_row is None:
