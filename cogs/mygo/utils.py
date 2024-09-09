@@ -2,7 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 import ffmpeg
-from sqlmodel import col, column, func, select
+from sqlmodel import column, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.classes import BaseClassMixin
@@ -168,22 +168,26 @@ class SubtitleUtils(BaseClassMixin):
                 .limit(paged_by)
                 .offset(paged_by * (nth_page - 1))
             )
+            count_query = select(func.count(SentenceItem.segment_id)).where(
+                column("text").contains(text)
+            )
+
+            # Add condifion for episode(if provided)
             if episode:
                 sql_query = sql_query.where(SentenceItem.episode == episode)
+                count_query = count_query.where(SentenceItem.episode == episode)
 
-            results: list[SentenceItem] = (await session.exec(sql_query)).all()
-            # get total count of found items
-            total_count = (
-                await session.exec(
-                    select(func.count(col(SentenceItem.segment_id))).where(
-                        SentenceItem.text.contains(text),
-                    )
-                )
-            ).one()
+            results = (await session.exec(sql_query)).all()
+            total_found = (await session.exec(count_query)).one()
 
-        return results, total_count
+        return results, total_found
 
     @staticmethod
     async def get_item_by_segment_id(segment_id: int) -> SentenceItem:
         async with AsyncSession(engine) as session:
-            return await session.get(SentenceItem, segment_id)
+            # return await session.get(SentenceItem, segment_id)
+            return (
+                await session.exec(
+                    select(SentenceItem).where(SentenceItem.segment_id == segment_id)
+                )
+            ).first()
