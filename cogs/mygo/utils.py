@@ -140,8 +140,8 @@ class SubtitleUtils(BaseClassMixin):
 
         return BytesIO(result)
 
-    @staticmethod
     async def search_title_by_text(
+        self,
         text: str,
         episode: EpisodeChoices | None = None,
         paged_by: int = PAGED_BY,
@@ -168,6 +168,8 @@ class SubtitleUtils(BaseClassMixin):
                 .limit(paged_by)
                 .offset(paged_by * (nth_page - 1))
             )
+
+            # pylint: disable=not-callable
             count_query = select(func.count(SentenceItem.segment_id)).where(
                 column("text").contains(text)
             )
@@ -176,6 +178,19 @@ class SubtitleUtils(BaseClassMixin):
             if episode:
                 sql_query = sql_query.where(SentenceItem.episode == episode)
                 count_query = count_query.where(SentenceItem.episode == episode)
+
+            self.logger.info(
+                "Searching subtitle by text: %s, episode: %s, paged_by: %d, nth_page: %d",
+                text,
+                episode,
+                paged_by,
+                nth_page,
+            )
+            self.logger.debug(
+                "SQL Query: %s\nCount Query: %s",
+                sql_query.compile(),
+                count_query.compile(),
+            )
 
             results = (await session.exec(sql_query)).all()
             total_found = (await session.exec(count_query)).one()

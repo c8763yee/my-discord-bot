@@ -32,6 +32,7 @@ class ChatGPT(BaseClassMixin):
         self.client = openai.AsyncOpenAI(**kwargs)
 
     async def detect_malicious_content(self, prompt: str) -> bool:
+        self.logger.info("Checking for malicious content in the prompt: %s", prompt)
         response = await self.client.moderations.create(input=prompt)
         result = response.results[0]
 
@@ -56,6 +57,7 @@ class ChatGPT(BaseClassMixin):
         if await self.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
 
+        self.logger.info("Asking the ChatGPT API with the prompt: %s", prompt)
         self._history.append({"role": "user", "content": prompt})
         response = await self._send_message(**open_kwargs)
         return response.choices[0].message.content, response.usage
@@ -70,6 +72,7 @@ class ChatGPT(BaseClassMixin):
         if await self.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
 
+        self.logger.info("Creating images with the prompt: %s", prompt)
         results = await self.client.images.generate(
             prompt=prompt, model=model, quality=quality, size=size
         )
@@ -89,6 +92,7 @@ class ChatGPT(BaseClassMixin):
         if await self.detect_malicious_content(text):
             raise ValueError("This Prompt contains malicious content")
 
+        self.logger.info("Asking the vision model with the prompt: %s", text)
         vision_prompt = [
             {
                 "type": "image_url",
