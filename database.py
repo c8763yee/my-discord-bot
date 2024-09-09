@@ -28,13 +28,12 @@ class BaseSQLModel(SQLModel):
     __table_args__ = {
         "extend_existing": True,
         "mysql_charset": "utf8mb4",
-        "mysql_default_charset": "utf8mb4"
+        "mysql_default_charset": "utf8mb4",
     }
-    
+
     ID: int = Field(primary_key=True)
-    create_time: datetime.datetime = Field(default_factory=lambda : datetime.datetime.now(TZ))
-    
-    
+    create_time: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(TZ))
+
 
 # --------------- MyGO --------------- #
 class EpisodeItem(BaseSQLModel, table=True):
@@ -70,7 +69,7 @@ class SentenceItem(BaseSQLModel, table=True):
     episode: str
     frame_start: int
     frame_end: int
-    segment_id: int
+    segment_id: int = Field(index=True)
 
     @computed_field
     @property
@@ -120,3 +119,19 @@ class PhoneCharge(Emeter, table=True):
 
 class RaspberryPi(Emeter, table=True):
     __tablename__ = "pi"
+
+    # drop all database then create
+
+
+async def recreate_model():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+
+if __name__ == "__main__":
+    from asyncio import get_event_loop, set_event_loop
+
+    loop = get_event_loop()
+    set_event_loop(loop)
+    loop.run_until_complete(recreate_model())
