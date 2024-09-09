@@ -24,7 +24,12 @@ class SubtitleUtils(BaseClassMixin):
     @staticmethod
     async def _check_frame_exist(episode: EpisodeChoices, *frames: int) -> list[bool]:
         async with AsyncSession(engine) as session:
-            episode_data = await session.get(EpisodeItem, episode)
+            # episode_data = await session.get(EpisodeItem, episode)
+            episode_data = (
+                await session.exec(select(EpisodeItem).where(EpisodeItem.episode == episode))
+            ).first()
+        if episode_data is None:
+            raise ValueError(f"Episode {episode} does not exist")
 
         return list(map(lambda frame: 0 <= frame <= episode_data.total_frame, frames))
 
