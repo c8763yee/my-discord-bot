@@ -1,4 +1,5 @@
 from discord import Embed
+from discord.ui import View
 
 from loggers import setup_package_logger
 
@@ -27,3 +28,6 @@ class BaseClassMixin:
             embed.add_field(name=field.name, value=field.value, inline=field.inline)
 
         return embed
+
+
+class CogsView(BaseClassMixin, View): ...

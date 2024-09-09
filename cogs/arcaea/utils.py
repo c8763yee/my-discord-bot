@@ -43,7 +43,7 @@ def is_same_song(song: dict, recent_play: dict) -> bool:
     return song["sid"] == recent_play["song_id"] and song["difficulty"] == recent_play["difficulty"]
 
 
-class ScoreUtils:
+class ScoreUtils(BaseClassMixin):
     async def step_to_rating(self, char_step: int, world_step: float) -> float:
         return ((50 / char_step * world_step - 2.5) / 2.45) ** 2
 
@@ -116,6 +116,7 @@ class APIUtils(ScoreUtils):
     _songlist: list = []
 
     def __init__(self, email: str, password: str):
+        super().__init__()
         self.email: str = email
         self.password: str = password
         self.is_logged_in: bool = False
