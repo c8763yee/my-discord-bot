@@ -12,7 +12,9 @@ from loggers import TZ
 
 load_env(Path.cwd() / "env" / "db.env")
 DATABASE_URL: str = (
-    "mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}?charset=UTF8mb4"
+    # pylint: disable=consider-using-f-string
+    "mysql+aiomysql://"
+    "{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:3306/{MYSQL_DATABASE}?charset=UTF8mb4"
 ).format(
     MYSQL_USER=os.getenv("MYSQL_USER", "root"),
     MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD", "root"),

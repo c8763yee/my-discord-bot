@@ -251,13 +251,16 @@ class SubtitleCMD(CogsExtension):
         if result is None:
             raise commands.BadArgument(f"Segment ID {segment_id} not found.")
 
+        if response_format not in ("frame", "gif"):
+            raise commands.BadArgument("Invalid response format.")
+
         if response_format == "gif":
             file = await self.utils.extract_gif(
                 result.episode, result.frame_start, result.frame_end
             )
             filename = f"{result.episode}-{result.frame_start}-{result.frame_end}.gif"
 
-        elif response_format == "frame":
+        else:
             file = await self.utils.extract_frame(result.episode, result.frame_start)
             filename = f"{result.episode}-{result.frame_start}.png"
 

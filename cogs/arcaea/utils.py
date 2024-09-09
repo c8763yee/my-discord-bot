@@ -116,6 +116,7 @@ class APIUtils(ScoreUtils):
     _songlist: list = []
 
     def __init__(self, email: str, password: str):
+        super().__init__()
         self.email: str = email
         self.password: str = password
         self.is_logged_in: bool = False
