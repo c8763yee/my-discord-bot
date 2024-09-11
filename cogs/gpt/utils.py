@@ -7,7 +7,7 @@ from typing import Any, Literal
 import discord
 import openai
 from openai import pydantic_function_tool
-from openai._types import FileTypes
+from openai._types import NOT_GIVEN, FileTypes, NotGiven
 from openai.types import CompletionUsage, Image
 from openai.types.audio.transcription import Transcription
 from openai.types.chat import (
@@ -22,6 +22,18 @@ from core.classes import BaseClassMixin
 from core.models import Field
 
 FuncType = Callable[..., Coroutine[Any, Any, Any]] | None
+
+
+def is_pydantic_model(obj: Any) -> bool:
+    result = isinstance(obj, BaseModel)
+    if result is False:
+        try:
+            result = issubclass(obj, BaseModel)
+
+        except TypeError:  # issubclass() arg 1 must be a class
+            return False
+
+    return result
 
 
 class ChatGPT(BaseClassMixin):
@@ -41,6 +53,10 @@ class ChatGPT(BaseClassMixin):
     tools_mapping: dict[str, ChatCompletionToolParam] = {}
 
     @property
+    def history(self) -> list[dict]:
+        return self._history
+
+    @property
     def tools(self) -> list[ChatCompletionToolParam]:
         return list(self.tools_mapping.values())
 
@@ -49,13 +65,13 @@ class ChatGPT(BaseClassMixin):
         self._history = [self.behavior]
         self.client = openai.AsyncOpenAI(**kwargs)
 
-    async def setup_behavior(self, behavior: dict):
-        if "content" not in behavior or behavior.get("role", "not set") != "system":
-            raise ValueError("Behavior must have a content and role(must be system)")
+    async def setup_behavior(self, behavior: str):
+        if isinstance(behavior, str):
+            self.behavior = {"role": "system", "content": behavior}
+        else:
+            self.behavior = behavior
 
-        self.behavior = behavior
-        self._history[0] = behavior
-        self.logger.info("Behavior updated: %s", behavior["content"])
+        self._history = [self.behavior]
 
     async def detect_malicious_content(self, prompt: str) -> bool:
         self.logger.info("Checking for malicious content in the prompt: %s", prompt)
@@ -68,32 +84,42 @@ class ChatGPT(BaseClassMixin):
     async def _send_message(
         self,
         parse_response: bool = False,
+        response_format: dict | BaseModel | NotGiven = NOT_GIVEN,
         **kwargs,
     ) -> ChatCompletion | ParsedChatCompletion:
+        messages = kwargs.pop("messages", self._history)
         method = self.client.chat.completions.create
-        response_format: dict | BaseModel | None = kwargs.get("response_format", None)
-        if parse_response or (
-            isinstance(response_format, dict) is False and isinstance(response_format, BaseModel)
-        ):
+        if parse_response or is_pydantic_model(response_format):
             method = self.client.beta.chat.completions.parse
 
-        return await method(messages=kwargs.pop("messages", self._history), **kwargs)
+        return await method(
+            messages=messages,
+            response_format=response_format,
+            **kwargs,
+        )
 
-    async def ask(self, prompt: str, **open_kwargs) -> tuple[str, CompletionUsage]:
-        if await self.detect_malicious_content(prompt):
+    async def ask(
+        self,
+        prompt: str | list[dict],
+        model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
+        **openai_kwargs,
+    ) -> tuple[str, CompletionUsage]:
+        if isinstance(prompt, str) and (await self.detect_malicious_content(prompt)):
             raise ValueError("This Prompt contains malicious content")
 
         self.logger.info("Asking the ChatGPT API with the prompt: %s", prompt)
         self._history.append({"role": "user", "content": prompt})
-        response = await self._send_message(**open_kwargs)
+        response = await self._send_message(model=model, **openai_kwargs)
         return response.choices[0].message.content, response.usage
 
     async def create_images(
         self,
         prompt: str,
-        model: str,
-        quality: str = OpenAIConfig.IMAGE_QUALITY,
-        size: str = OpenAIConfig.IMAGE_SIZE,
+        model: Literal["dall-e-2", "dall-e-3"] = OpenAIConfig.IMAGE_MODEL,
+        quality: Literal["standard", "hd"] = OpenAIConfig.IMAGE_QUALITY,
+        size: Literal[
+            "256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"
+        ] = OpenAIConfig.IMAGE_SIZE,
     ) -> list[Image]:
         if await self.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
@@ -107,7 +133,7 @@ class ChatGPT(BaseClassMixin):
     async def vision(
         self,
         text: str,
-        image_url: str,
+        image_content: str,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
     ) -> tuple[str, CompletionUsage]:
         """Returns the response from the vision model
@@ -119,10 +145,15 @@ class ChatGPT(BaseClassMixin):
             raise ValueError("This Prompt contains malicious content")
 
         self.logger.info("Asking the vision model with the prompt: %s", text)
+        if (
+            image_content.startswith("http") is False
+        ):  # assume that the image is either a base64 encoded string or a file url
+            image_content = f"data:image/jpeg;base64,{image_content}"
+
         vision_prompt = [
             {
                 "type": "image_url",
-                "image_url": {"url": image_url, "detail": OpenAIConfig.VISION_DETAIL},
+                "image_url": {"url": image_content, "detail": OpenAIConfig.VISION_DETAIL},
             },
             {"type": "text", "text": text},
         ]
@@ -135,21 +166,28 @@ class ChatGPT(BaseClassMixin):
         return transcript
 
     async def static_ask(
-        self, prompt: str, *shots: dict, response_format: BaseModel | dict | None = None, **kwargs
+        self,
+        prompt: str,
+        *hint_shots: dict,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
+        response_format: type[BaseModel] | BaseModel | dict | NotGiven = NOT_GIVEN,
+        **kwargs,
     ) -> tuple[str | BaseModel, CompletionUsage]:
         if (
             isinstance(response_format, dict) is False
-            or isinstance(response_format, BaseModel) is False
+            and is_pydantic_model(response_format) is False
         ):
-            raise ValueError("response_format must be BaseModel or dict")
+            raise ValueError(
+                f"response_format must be a Pydantic model or a dict, got {response_format}"
+            )
 
         behavior: dict = kwargs.pop("behavior", self.behavior)
-        messages = [behavior, *shots, {"role": "user", "content": prompt}]
+        messages = [behavior, *hint_shots, {"role": "user", "content": prompt}]
         response: ChatCompletion | ParsedChatCompletion = await self._send_message(
-            messages=messages, **kwargs, response_format=response_format, **kwargs
+            messages=messages, **kwargs, response_format=response_format, model=model, **kwargs
         )
         content: str | BaseModel = response.choices[0].message.content
-        if isinstance(response_format, BaseModel):
+        if is_pydantic_model(response_format):
             content: BaseModel = response.choices[0].message.parsed
 
         return content, response.usage
@@ -178,7 +216,11 @@ class ChatGPT(BaseClassMixin):
         self.tools_mapping[func_name] = func_item
 
     async def function_calling(
-        self, func: FuncType, prompt: str, **kwargs
+        self,
+        func: FuncType,
+        prompt: str,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
+        **kwargs,
     ) -> tuple[str, CompletionUsage]:
         """Currently only supports synchronous functions"""
         if func.__name__ not in self.tools_mapping:
@@ -195,7 +237,7 @@ class ChatGPT(BaseClassMixin):
 
         tools_response: ParsedChatCompletion = await self._send_message(
             messages=messages,
-            model=kwargs.pop("model", "gpt-4o-mini-2024-07-18"),
+            model=model,
             tools=self.tools,
             tool_choice={"type": "function", "function": {"name": func.__name__}},
             parse_response=True,
@@ -232,7 +274,7 @@ class ChatGPT(BaseClassMixin):
 
         final_response = await self._send_message(
             messages=messages,
-            model=kwargs.pop("model", "gpt-4o-mini-2024-07-18"),
+            model=model,
             **kwargs,
         )
         self.logger.debug("Function calling result: %s", final_response.choices[0].message.content)
