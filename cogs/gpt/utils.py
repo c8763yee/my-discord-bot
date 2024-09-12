@@ -205,7 +205,7 @@ class ChatGPT(BaseClassMixin):
             image_text: the base64 encoded image.
         """
         self.logger.info("Asking the vision model with the prompt: %s", prompt)
-        await self.append_image(image_url, text=prompt)
+        self.append_image(image_url, text=prompt)
         response = await self.apply_message(model=model)
         return response.choices[0].message.content, response.usage
 
@@ -352,7 +352,8 @@ class ChatGPTUtils:
         image_url: str,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
     ) -> tuple[str, CompletionUsage]:
-        return await self.chatbot.vision(text, image_url, model=model)
+        response, usage = await self.chatbot.vision(text, image_url, model=model)
+        return response, usage
 
 
 class ChatGPTResponseFormatter:

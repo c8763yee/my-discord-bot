@@ -97,8 +97,8 @@ class KasaUtils:
             if not result:  # return -1 if no record found
                 return -1.0
 
-            # calculate the total power usage within 24HR(5s interval) in kWh
-            return sum(item.power for item in result) / 1000 * 5
+            # calculate the total power usage within 24HR(5s interval) and convert to kWh
+            return sum(item.power for item in result) / 1000 * 5 / 3600
 
 
 class KasaResponseFormatter(BaseClassMixin):
