@@ -41,13 +41,11 @@ class ChatGPT(BaseClassMixin):
     if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
     """
 
-    system_prompt = (
-        dedent(
-            """
+    system_prompt = dedent(
+        """
         You are a helpful assistant to help me with my tasks.
         please answer my questions with my language.
         """
-        ),
     )
     tools_mapping: dict[str, ChatCompletionToolParam] = {}
 
@@ -59,11 +57,31 @@ class ChatGPT(BaseClassMixin):
     def history(self) -> list[dict]:
         return self.__history
 
+    async def check_message(self, messages: list[dict]):
+        for idx, message in enumerate(messages):
+            if message["role"] != "user":  # we only need to check the user messages
+                continue
+            if isinstance(message["content"], list) is False:
+                if await self.detect_malicious_content(message["content"]):
+                    self.__history = self.__history[:idx]
+                    raise ValueError(
+                        f"Malicious content detected in the message: {message['content']}"
+                    )
+                continue
+
+            for item in message["content"]:
+                if item["type"] == "image_url":
+                    continue
+
+                if await self.detect_malicious_content(item["text"]):
+                    self.__history = self.__history[:idx]
+                    raise ValueError(f"Malicious content detected in the message: {item['text']}")
+
     def print_history(self):
         """Print the chat history for debugging purposes"""
-        for chat in self.history:
+        for idx, chat in enumerate(self.history):
             if isinstance(chat["content"], str):
-                self.logger.debug("history(%s): %s", chat["role"], chat["content"])
+                self.logger.info("%d: history(%s): %s", idx, chat["role"], chat["content"])
 
             elif isinstance(chat["content"], list):
                 for i, item in enumerate(chat["content"]):
@@ -71,54 +89,41 @@ class ChatGPT(BaseClassMixin):
                     if item["type"] == "image_url":
                         text = "<IMAGE>"
 
-                    self.logger.debug("history(%s)[%s]: %s", chat["role"], i, text)
+                    self.logger.info("%d: history(%s)[%s]: %s", idx, chat["role"], i, text)
 
-    async def append_history(
+    def append_history(
         self, content: str | list[dict], role: Literal["user", "system", "assistant"] = "user"
-    ):
+    ) -> "ChatGPT":
         self.__history.append({"role": role, "content": content})
+        return self
 
-    async def append_image(
-        self, contents: list[tuple[str | None, str]]
-    ):  # contents: text, image_url
+    def append_image(self, image_b64: str, text: str | None = None) -> "ChatGPT":
         vision_prompt = []
-        for text, image_b64 in contents:
-            self.logger.debug(
-                "text malicous check: %s = %s", text, await self.detect_malicious_content(text)
-            )
-            if isinstance(text, str) and await self.detect_malicious_content(text):
-                raise ValueError("This Prompt contains malicious content")
+        if text is not None:
+            vision_prompt.append({"type": "text", "text": text})
 
-            if text is not None:
-                vision_prompt.append({"type": "text", "text": text})
+        image_url = image_b64
+        if image_b64.startswith("http") is False and image_b64.startswith("data:image") is False:
+            image_url = f"data:image/png;base64,{image_b64}"
 
-            image_url = image_b64
-            if (
-                image_b64.startswith("http") is False
-                and image_b64.startswith("data:image") is False
-            ):
-                image_url = f"data:image/png;base64,{image_b64}"
+        vision_prompt.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": image_url, "detail": OpenAIConfig.VISION_DETAIL},
+            }
+        )
+        return self.append_history(vision_prompt)
 
-            vision_prompt.append(
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_url,
-                        "detail": OpenAIConfig.VISION_DETAIL,
-                    },
-                }
-            )
-        await self.append_history(vision_prompt)
+    @classmethod
+    def setup_behavior(cls, behavior: str) -> "ChatGPT":
+        obj = cls()
+        obj.append_history(behavior, role="system")
+        return obj
 
     def __init__(self, *_, **kwargs):
         super().__init__()
         self.__history = []
         self.client = openai.AsyncOpenAI(**kwargs)
-        self.append_history(self.system_prompt, role="system")
-
-    def setup_behavior(self, behavior: str):
-        self.system_prompt = behavior
-        self.__history = []
         self.append_history(self.system_prompt, role="system")
 
     async def detect_malicious_content(self, prompt: str) -> bool:
@@ -141,19 +146,20 @@ class ChatGPT(BaseClassMixin):
 
     async def apply_message(
         self,
+        model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
         parse_response: bool = False,
         response_format: dict | BaseModel | NotGiven = NOT_GIVEN,
         **kwargs,
     ) -> ChatCompletion | ParsedChatCompletion:
-        messages = kwargs.pop("messages", self.__history)
+        messages = kwargs.pop("messages", self.history)
+        await self.check_message(messages)
+
         method = self.client.chat.completions.create
         if parse_response or is_pydantic_model(response_format):
             method = self.client.beta.chat.completions.parse
 
         result = await method(
-            messages=messages,
-            response_format=response_format,
-            **kwargs,
+            messages=messages, response_format=response_format, model=model, **kwargs
         )
 
         return result
@@ -164,11 +170,8 @@ class ChatGPT(BaseClassMixin):
         model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
         **openai_kwargs,
     ) -> tuple[str, CompletionUsage]:
-        if isinstance(prompt, str) and (await self.detect_malicious_content(prompt)):
-            raise ValueError("This Prompt contains malicious content")
-
         self.logger.info("Asking the ChatGPT API with the prompt: %s", prompt)
-        self.__history.append({"role": "user", "content": prompt})
+        self.append_history(prompt, role="user")
         response = await self.apply_message(model=model, **openai_kwargs)
         return response.choices[0].message.content, response.usage
 
@@ -201,11 +204,8 @@ class ChatGPT(BaseClassMixin):
             text: the prompt to the model
             image_text: the base64 encoded image.
         """
-        if await self.detect_malicious_content(prompt):
-            raise ValueError("This Prompt contains malicious content")
-
         self.logger.info("Asking the vision model with the prompt: %s", prompt)
-        await self.append_image([(prompt, image_url)])
+        await self.append_image(image_url, text=prompt)
         response = await self.apply_message(model=model)
         return response.choices[0].message.content, response.usage
 
@@ -272,7 +272,10 @@ class ChatGPT(BaseClassMixin):
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
         **kwargs,
     ) -> tuple[str, CompletionUsage]:
-        """Currently only supports synchronous functions"""
+        """Call function that is registered as a tool in the ChatGPT API
+        NOTE: This method will not effect the chat history as it will be a separate conversation
+
+        """
         if func.__name__ not in self.tools_mapping:
             raise ValueError(
                 f"""
@@ -335,7 +338,7 @@ class ChatGPTUtils:
     def __init__(self):
         self.chatbot = ChatGPT()
 
-    async def ask(self, question: str, model: str) -> str:
+    async def ask(self, question: str, model: str) -> tuple[str, CompletionUsage]:
         answer, token_usage = await self.chatbot.ask(question, model=model)
         return answer, token_usage
 
@@ -348,7 +351,7 @@ class ChatGPTUtils:
         text: str,
         image_url: str,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
-    ) -> str:
+    ) -> tuple[str, CompletionUsage]:
         return await self.chatbot.vision(text, image_url, model=model)
 
 
