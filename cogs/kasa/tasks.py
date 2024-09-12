@@ -38,5 +38,6 @@ class KasaTasks(CogsExtension):
         await channel.send(
             "Daily power usage report for all plugs\n```\n"
             + "\n".join([f"Plug {plug_id}: {kwh} kWh" for plug_id, kwh in watts.items()])
-            + "\n```"
+            + "\n```",
+            silent=True,
         )
