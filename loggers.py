@@ -1,7 +1,7 @@
 import datetime
 import logging
 import sys
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from textwrap import dedent
 
@@ -66,9 +66,12 @@ def setup_package_logger(package_name: str, file_level=logging.INFO) -> logging.
 
     formatter = logging.Formatter(fmt=FORMAT_PATTERN)
 
-    file_handler = RotatingFileHandler(
+    file_handler = TimedRotatingFileHandler(
         filename=log_full_path.with_suffix(".log"),
-        maxBytes=10 * 1024 * 1024,  # 10 MB
+        when="midnight",
+        interval=1,
+        backupCount=7,
+        encoding="utf-8",
     )
     file_handler.setLevel(file_level)
     file_handler.setFormatter(formatter)
