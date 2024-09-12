@@ -6,7 +6,6 @@ services:
     image: bot
     container_name: bot
     volumes:
-      - $HOME/logs:/app/logs:rw
       - /usr/bin:/usr/bin # Additional volume mount not in base
     devices:
       # Mount the /dev/vcio device for the Raspberry Pi
