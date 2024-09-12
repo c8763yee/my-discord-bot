@@ -41,62 +41,122 @@ class ChatGPT(BaseClassMixin):
     if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
     """
 
-    behavior = {
-        "role": "system",
-        "content": dedent(
+    system_prompt = (
+        dedent(
             """
         You are a helpful assistant to help me with my tasks.
         please answer my questions with my language.
         """
         ),
-    }
+    )
     tools_mapping: dict[str, ChatCompletionToolParam] = {}
-
-    @property
-    def history(self) -> list[dict]:
-        return self._history
 
     @property
     def tools(self) -> list[ChatCompletionToolParam]:
         return list(self.tools_mapping.values())
 
-    def __init__(self, *args, **kwargs):
+    @property
+    def history(self) -> list[dict]:
+        return self.__history
+
+    def print_history(self):
+        """Print the chat history for debugging purposes"""
+        for chat in self.history:
+            if isinstance(chat["content"], str):
+                self.logger.debug("history(%s): %s", chat["role"], chat["content"])
+
+            elif isinstance(chat["content"], list):
+                for i, item in enumerate(chat["content"]):
+                    text = item.get(item["type"], "")
+                    if item["type"] == "image_url":
+                        text = "<IMAGE>"
+
+                    self.logger.debug("history(%s)[%s]: %s", chat["role"], i, text)
+
+    async def append_history(
+        self, content: str | list[dict], role: Literal["user", "system", "assistant"] = "user"
+    ):
+        self.__history.append({"role": role, "content": content})
+
+    async def append_image(
+        self, contents: list[tuple[str | None, str]]
+    ):  # contents: text, image_url
+        vision_prompt = []
+        for text, image_b64 in contents:
+            self.logger.debug(
+                "text malicous check: %s = %s", text, await self.detect_malicious_content(text)
+            )
+            if isinstance(text, str) and await self.detect_malicious_content(text):
+                raise ValueError("This Prompt contains malicious content")
+
+            if text is not None:
+                vision_prompt.append({"type": "text", "text": text})
+
+            image_url = image_b64
+            if (
+                image_b64.startswith("http") is False
+                and image_b64.startswith("data:image") is False
+            ):
+                image_url = f"data:image/png;base64,{image_b64}"
+
+            vision_prompt.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_url,
+                        "detail": OpenAIConfig.VISION_DETAIL,
+                    },
+                }
+            )
+        await self.append_history(vision_prompt)
+
+    def __init__(self, *_, **kwargs):
         super().__init__()
-        self._history = [self.behavior]
+        self.__history = []
         self.client = openai.AsyncOpenAI(**kwargs)
+        self.append_history(self.system_prompt, role="system")
 
-    async def setup_behavior(self, behavior: str):
-        if isinstance(behavior, str):
-            self.behavior = {"role": "system", "content": behavior}
-        else:
-            self.behavior = behavior
-
-        self._history = [self.behavior]
+    def setup_behavior(self, behavior: str):
+        self.system_prompt = behavior
+        self.__history = []
+        self.append_history(self.system_prompt, role="system")
 
     async def detect_malicious_content(self, prompt: str) -> bool:
+        if isinstance(prompt, str) is False:
+            raise ValueError("Prompt must be a string")
+
         self.logger.info("Checking for malicious content in the prompt: %s", prompt)
         response = await self.client.moderations.create(input=prompt)
         result = response.results[0]
 
-        self.logger.info("Moderation result: %s", result.model_dump_json(indent=2))
-        return result.flagged or any(result.categories.model_dump().values())
+        self.logger.info("Moderation result: %s", result.model_dump())
+        return (
+            result.flagged
+            or any(flag for flag in result.categories.model_dump().values())
+            or any(
+                score >= OpenAIConfig.MALICIOUS_THRESHOLD
+                for score in result.category_scores.model_dump().values()
+            )
+        )
 
-    async def _send_message(
+    async def apply_message(
         self,
         parse_response: bool = False,
         response_format: dict | BaseModel | NotGiven = NOT_GIVEN,
         **kwargs,
     ) -> ChatCompletion | ParsedChatCompletion:
-        messages = kwargs.pop("messages", self._history)
+        messages = kwargs.pop("messages", self.__history)
         method = self.client.chat.completions.create
         if parse_response or is_pydantic_model(response_format):
             method = self.client.beta.chat.completions.parse
 
-        return await method(
+        result = await method(
             messages=messages,
             response_format=response_format,
             **kwargs,
         )
+
+        return result
 
     async def ask(
         self,
@@ -108,11 +168,11 @@ class ChatGPT(BaseClassMixin):
             raise ValueError("This Prompt contains malicious content")
 
         self.logger.info("Asking the ChatGPT API with the prompt: %s", prompt)
-        self._history.append({"role": "user", "content": prompt})
-        response = await self._send_message(model=model, **openai_kwargs)
+        self.__history.append({"role": "user", "content": prompt})
+        response = await self.apply_message(model=model, **openai_kwargs)
         return response.choices[0].message.content, response.usage
 
-    async def create_images(
+    async def generate_images(
         self,
         prompt: str,
         model: Literal["dall-e-2", "dall-e-3"] = OpenAIConfig.IMAGE_MODEL,
@@ -132,8 +192,8 @@ class ChatGPT(BaseClassMixin):
 
     async def vision(
         self,
-        text: str,
-        image_content: str,
+        prompt: str,
+        image_url: str,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
     ) -> tuple[str, CompletionUsage]:
         """Returns the response from the vision model
@@ -141,23 +201,13 @@ class ChatGPT(BaseClassMixin):
             text: the prompt to the model
             image_text: the base64 encoded image.
         """
-        if await self.detect_malicious_content(text):
+        if await self.detect_malicious_content(prompt):
             raise ValueError("This Prompt contains malicious content")
 
-        self.logger.info("Asking the vision model with the prompt: %s", text)
-        if (
-            image_content.startswith("http") is False
-        ):  # assume that the image is either a base64 encoded string or a file url
-            image_content = f"data:image/jpeg;base64,{image_content}"
-
-        vision_prompt = [
-            {
-                "type": "image_url",
-                "image_url": {"url": image_content, "detail": OpenAIConfig.VISION_DETAIL},
-            },
-            {"type": "text", "text": text},
-        ]
-        return await self.ask(vision_prompt, model=model)
+        self.logger.info("Asking the vision model with the prompt: %s", prompt)
+        await self.append_image([(prompt, image_url)])
+        response = await self.apply_message(model=model)
+        return response.choices[0].message.content, response.usage
 
     async def transcribe(self, audio_file: FileTypes) -> Transcription:
         transcript = await self.client.audio.transcriptions.create(
@@ -181,9 +231,9 @@ class ChatGPT(BaseClassMixin):
                 f"response_format must be a Pydantic model or a dict, got {response_format}"
             )
 
-        behavior: dict = kwargs.pop("behavior", self.behavior)
+        behavior: dict = kwargs.pop("behavior", self.system_prompt)
         messages = [behavior, *hint_shots, {"role": "user", "content": prompt}]
-        response: ChatCompletion | ParsedChatCompletion = await self._send_message(
+        response: ChatCompletion | ParsedChatCompletion = await self.apply_message(
             messages=messages, **kwargs, response_format=response_format, model=model, **kwargs
         )
         content: str | BaseModel = response.choices[0].message.content
@@ -232,10 +282,10 @@ class ChatGPT(BaseClassMixin):
             )
 
         messages = []
-        messages.append(self.behavior)
+        messages.append(self.system_prompt)
         messages.append({"role": "user", "content": prompt})
 
-        tools_response: ParsedChatCompletion = await self._send_message(
+        tools_response: ParsedChatCompletion = await self.apply_message(
             messages=messages,
             model=model,
             tools=self.tools,
@@ -272,7 +322,7 @@ class ChatGPT(BaseClassMixin):
         messages.append(tools_response.choices[0].message)
         messages.append(function_call_result_message)
 
-        final_response = await self._send_message(
+        final_response = await self.apply_message(
             messages=messages,
             model=model,
             **kwargs,
@@ -290,7 +340,7 @@ class ChatGPTUtils:
         return answer, token_usage
 
     async def generate_image(self, prompt: str, model: str) -> str:
-        images = await self.chatbot.create_images(prompt=prompt, model=model)
+        images = await self.chatbot.generate_images(prompt=prompt, model=model)
         return images[0].url
 
     async def vision(

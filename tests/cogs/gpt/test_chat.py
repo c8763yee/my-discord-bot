@@ -102,7 +102,7 @@ async def test_create_images(
     chatbot: ChatGPT,
     gpt_patcher: pytest.MonkeyPatch,
 ):
-    results = await chatbot.create_images("A picture of a cat", "dall-e-2")
+    results = await chatbot.generate_images("A picture of a cat", "dall-e-2")
     assert len(results) == 1
 
 
@@ -110,4 +110,4 @@ async def test_create_images(
 async def test_create_images_malicious_content(chatbot: ChatGPT, gpt_patcher: pytest.MonkeyPatch):
     gpt_patcher.setattr(chatbot, "detect_malicious_content", AsyncMock(return_value=True))
     with pytest.raises(ValueError):
-        await chatbot.create_images("I'm going to hack you", "dall-e-2")
+        await chatbot.generate_images("I'm going to hack you", "dall-e-2")

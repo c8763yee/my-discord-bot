@@ -11,6 +11,7 @@ class OpenAIConfig:
     IMAGE_MODEL: Literal["dall-e-2", "dall-e-3"] = "dall-e-2"
     CHAT_MODEL: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = "gpt-4o-mini"
     VISION_MODEL: Literal["gpt-4o", "gpt-4o-mini"] = "gpt-4o-mini"
+    MALICIOUS_THRESHOLD: float = 0.5
 
 
 class Config:
