@@ -4,8 +4,10 @@ from pathlib import Path
 from textwrap import dedent
 
 from pydantic import ConfigDict, computed_field
+from sqlalchemy.dialects.mysql import TEXT
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlmodel import Field, SQLModel
+from sqlmodel import Column, Field, Relationship, SQLModel
+from strenum import StrEnum
 
 from core import load_env
 from loggers import TZ
@@ -123,6 +125,27 @@ class RaspberryPi(Emeter, table=True):
     __tablename__ = "pi"
 
     # drop all database then create
+
+
+# --------------- OpenAI Chat History --------------- #
+class Role(StrEnum):
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+
+
+class ChatHistory(BaseSQLModel, table=True):
+    chat_id: str = Field(foreign_key="chat.history_id", index=True, ondelete="CASCADE")
+    chat: "Chat" = Relationship(back_populates="history")
+    role: Role
+    content: str = Field(sa_column=Column(TEXT))
+
+
+class Chat(BaseSQLModel, table=True):
+    __tablename__ = "chat"
+    history_id: str = Field(index=True)
+    index: int = Field(default=0)
+    history: list[ChatHistory] = Relationship(back_populates="chat", cascade_delete=True)
 
 
 async def recreate_model():

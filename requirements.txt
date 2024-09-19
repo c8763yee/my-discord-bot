@@ -805,6 +805,9 @@ sqlalchemy==2.0.34 ; python_version >= "3.10" and python_version < "4.0" \
 sqlmodel==0.0.21 ; python_version >= "3.10" and python_version < "4.0" \
     --hash=sha256:b2034c23d930f66d2091b17a4280a9c23a7ea540a71e7fcf9c746d262f06f74a \
     --hash=sha256:eca104afe8a643f0764076b29f02e51d19d6b35c458f4c119942960362a4b52a
+strenum==0.4.15 ; python_version >= "3.10" and python_version < "4.0" \
+    --hash=sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff \
+    --hash=sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659
 tqdm==4.66.5 ; python_version >= "3.10" and python_version < "4.0" \
     --hash=sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd \
     --hash=sha256:e1020aef2e5096702d8a025ac7d16b1577279c9d63f8375b63083e9a5f0fcbad

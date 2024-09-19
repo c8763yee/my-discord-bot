@@ -30,6 +30,7 @@ aiosqlite = "^0.20.0"
 ffmpeg-python = "^0.2.0"
 sqlmodel = "^0.0.21"
 aiomysql = "^0.2.0"
+strenum = "^0.4.15"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^3.2.6"
