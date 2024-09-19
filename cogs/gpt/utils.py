@@ -168,7 +168,9 @@ class ChatGPT(BaseClassMixin):
                 )
             ).all()
             if chat_object is not None:
-                await session.exec(delete(ChatHistory))
+                await session.exec(
+                    delete(ChatHistory).where(ChatHistory.chat_id == self.history_id)
+                )
                 await session.commit()
 
     def print_history(self):
