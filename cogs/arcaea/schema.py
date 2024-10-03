@@ -281,6 +281,11 @@ class Song(SongsValidator):
     difficulties: list[Difficulty]
     additional_files: list[AdditionalFile] | None = None
 
+class DeletedSong(BaseModel):
+    idx: int = Field(default_factory=SongsValidator._generate_id)
+    id: str 
+    deleted: bool
+
 
 class SongList(BaseModel):
     songs: list[Song]
