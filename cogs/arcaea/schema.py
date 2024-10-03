@@ -288,7 +288,7 @@ class DeletedSong(BaseModel):
 
 
 class SongList(BaseModel):
-    songs: list[Song]
+    songs: list[Song | DeletedSong]
 
 
 class Packs(PacksValidator):
