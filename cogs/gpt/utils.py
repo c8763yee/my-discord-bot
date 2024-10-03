@@ -1,4 +1,5 @@
 import inspect
+import json
 import warnings
 from collections.abc import Callable, Coroutine, Iterable
 from textwrap import dedent
@@ -16,10 +17,12 @@ from openai.types.chat import (
     ParsedChatCompletion,
 )
 from pydantic import BaseModel
+from sqlmodel import delete, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from config import OpenAIConfig
-from core.classes import BaseClassMixin
-from core.models import Field
+from core.classes import BaseClassMixin, Field
+from database import Chat, ChatHistory, engine
 
 FuncType = Callable[..., Coroutine[Any, Any, Any]] | None
 
@@ -38,7 +41,7 @@ def is_pydantic_model(obj: Any) -> bool:
 
 class ChatGPT(BaseClassMixin):
     """A chatbot based on OpenAI's chat API
-    if the chat history doesn't need to save, then use DUMMY_UUID as UUID.
+    if the chat history doesn't need to save, then use DUMMY_str as str.
     """
 
     system_prompt = dedent(
@@ -57,6 +60,80 @@ class ChatGPT(BaseClassMixin):
     def history(self) -> list[dict]:
         return self.__history
 
+    @property
+    def history_id(self) -> str | None:
+        return self.__history_id
+
+    async def retrieve_history(self, init_message: str | None = None, raise_error: bool = False):
+        if init_message is None:
+            init_message = self.system_prompt
+
+        if self.__use_db is False:
+            return await self.append_history(init_message, role="system")
+
+        async with AsyncSession(engine) as session:
+            old_item = (
+                await session.exec(select(Chat).where(Chat.history_id == self.history_id))
+            ).first()
+
+            if old_item is None and raise_error:
+                self.logger.warning("The chat history is not found in the database")
+                return
+
+            elif old_item is None:
+                await self.append_history(init_message, role="system")
+                return
+
+            history_message = (
+                await session.exec(
+                    select(ChatHistory.role, ChatHistory.content).where(
+                        ChatHistory.chat_id == self.history_id
+                    )
+                )
+            ).all()
+
+        for role, text_content in history_message:
+            try:
+                content = json.loads(text_content.strip())
+            except json.JSONDecodeError:
+                self.logger.debug(
+                    "Failed to decode image content from the database, using as string"
+                )
+                content = text_content
+
+            self.__history.append({"role": role, "content": content})
+
+    async def insert_to_db(self, role: str, content: str | list[dict]):
+        if self.__use_db is False:
+            return
+
+        async with AsyncSession(engine) as session:
+            if isinstance(content, list):
+                content = json.dumps(content)
+
+            chat = Chat(history_id=self.history_id)
+
+            if (
+                await session.exec(select(Chat).where(Chat.history_id == self.history_id))
+            ).first() is None:
+                session.add(chat)
+
+            history = ChatHistory(chat_id=self.history_id, role=role, content=content)
+            session.add(history)
+            await session.commit()
+
+    async def pop_from_db(self) -> ChatHistory:
+        if self.__use_db is False:
+            raise ValueError("The chat history is not saved in the database")
+
+        async with AsyncSession(engine) as session:
+            history_object = await session.exec(
+                select(ChatHistory).where(ChatHistory.chat_id == self.history_id).order_by()
+            ).first()
+            await session.delete(history_object)
+            await session.commit()
+        return history_object
+
     async def check_message(self, messages: list[dict]):
         for idx, message in enumerate(messages):
             if message["role"] != "user":  # we only need to check the user messages
@@ -64,6 +141,7 @@ class ChatGPT(BaseClassMixin):
             if isinstance(message["content"], list) is False:
                 if await self.detect_malicious_content(message["content"]):
                     self.__history = self.__history[:idx]
+                    await self.pop_from_db()
                     raise ValueError(
                         f"Malicious content detected in the message: {message['content']}"
                     )
@@ -75,13 +153,31 @@ class ChatGPT(BaseClassMixin):
 
                 if await self.detect_malicious_content(item["text"]):
                     self.__history = self.__history[:idx]
+                    await self.pop_from_db()
                     raise ValueError(f"Malicious content detected in the message: {item['text']}")
+
+    async def clear_history(self):
+        self.__history = []
+        if self.__use_db is False:
+            return
+
+        async with AsyncSession(engine) as session:
+            chat_object = (
+                await session.exec(
+                    select(ChatHistory).where(ChatHistory.chat_id == self.history_id)
+                )
+            ).all()
+            if chat_object is not None:
+                await session.exec(
+                    delete(ChatHistory).where(ChatHistory.chat_id == self.history_id)
+                )
+                await session.commit()
 
     def print_history(self):
         """Print the chat history for debugging purposes"""
         for idx, chat in enumerate(self.history):
             if isinstance(chat["content"], str):
-                self.logger.info("%d: history(%s): %s", idx, chat["role"], chat["content"])
+                self.logger.debug("%d: history(%s): %s", idx, chat["role"], chat["content"])
 
             elif isinstance(chat["content"], list):
                 for i, item in enumerate(chat["content"]):
@@ -89,22 +185,22 @@ class ChatGPT(BaseClassMixin):
                     if item["type"] == "image_url":
                         text = "<IMAGE>"
 
-                    self.logger.info("%d: history(%s)[%s]: %s", idx, chat["role"], i, text)
+                    self.logger.debug("%d: history(%s)[%s]: %s", idx, chat["role"], i, text)
 
-    def append_history(
+    async def append_history(
         self, content: str | list[dict], role: Literal["user", "system", "assistant"] = "user"
     ) -> "ChatGPT":
         self.__history.append({"role": role, "content": content})
-        return self
+        await self.insert_to_db(role, content)
 
-    def append_image(self, image_b64: str, text: str | None = None) -> "ChatGPT":
+    async def append_image(self, image_b64: str, text: str | None = None) -> "ChatGPT":
         vision_prompt = []
         if text is not None:
             vision_prompt.append({"type": "text", "text": text})
 
         image_url = image_b64
         if image_b64.startswith("http") is False and image_b64.startswith("data:image") is False:
-            image_url = f"data:image/png;base64,{image_b64}"
+            image_url = f"data:image/jpeg;base64,{image_b64}"
 
         vision_prompt.append(
             {
@@ -112,19 +208,37 @@ class ChatGPT(BaseClassMixin):
                 "image_url": {"url": image_url, "detail": OpenAIConfig.VISION_DETAIL},
             }
         )
-        return self.append_history(vision_prompt)
+        await self.append_history(vision_prompt)
 
-    @classmethod
-    def setup_behavior(cls, behavior: str) -> "ChatGPT":
-        obj = cls()
-        obj.append_history(behavior, role="system")
-        return obj
+    async def setup_behavior(self, behavior: str | None = None) -> "ChatGPT":
+        if behavior is None:
+            behavior = self.system_prompt
 
-    def __init__(self, *_, **kwargs):
+        if self.__use_db:
+            async with AsyncSession(engine) as session:
+                chat_object = (
+                    await session.exec(select(Chat).where(Chat.history_id == self.history_id))
+                ).first()
+                if chat_object is None:
+                    chat = Chat(history_id=self.history_id)
+                    session.add(chat)
+                else:
+                    await self.clear_history()
+                await session.commit()
+
+        await self.append_history(behavior, role="system")
+
+    def __init__(self, *_, history_id: str | None = None, use_db: bool = False, **kwargs):
         super().__init__()
-        self.__history = []
         self.client = openai.AsyncOpenAI(**kwargs)
-        self.append_history(self.system_prompt, role="system")
+
+        if history_id is None and use_db:
+            raise ValueError("The history_id must be provided when use_db is True")
+
+        self.__history_id = history_id
+        self.__history = []
+
+        self.__use_db = use_db
 
     async def detect_malicious_content(self, prompt: str) -> bool:
         if isinstance(prompt, str) is False:
@@ -151,7 +265,7 @@ class ChatGPT(BaseClassMixin):
         response_format: dict | BaseModel | NotGiven = NOT_GIVEN,
         **kwargs,
     ) -> ChatCompletion | ParsedChatCompletion:
-        messages = kwargs.pop("messages", self.history)
+        messages = kwargs.pop("messages", self.__history)
         await self.check_message(messages)
 
         method = self.client.chat.completions.create
@@ -161,7 +275,9 @@ class ChatGPT(BaseClassMixin):
         result = await method(
             messages=messages, response_format=response_format, model=model, **kwargs
         )
-
+        self.logger.info(
+            "Completion Usage(%s): %s", self.history_id, result.usage.model_dump_json(indent=2)
+        )
         return result
 
     async def ask(
@@ -171,9 +287,11 @@ class ChatGPT(BaseClassMixin):
         **openai_kwargs,
     ) -> tuple[str, CompletionUsage]:
         self.logger.info("Asking the ChatGPT API with the prompt: %s", prompt)
-        self.append_history(prompt, role="user")
+        await self.append_history(prompt, role="user")
         response = await self.apply_message(model=model, **openai_kwargs)
-        return response.choices[0].message.content, response.usage
+        message = response.choices[0].message
+        await self.append_history(message.content, role=message.role)
+        return message.content, response.usage
 
     async def generate_images(
         self,
@@ -207,7 +325,9 @@ class ChatGPT(BaseClassMixin):
         self.logger.info("Asking the vision model with the prompt: %s", prompt)
         self.append_image(image_url, text=prompt)
         response = await self.apply_message(model=model)
-        return response.choices[0].message.content, response.usage
+        message = response.choices[0].message
+        self.append_history(message.content, role=message.role)
+        return message.content, response.usage
 
     async def transcribe(self, audio_file: FileTypes) -> Transcription:
         transcript = await self.client.audio.transcriptions.create(
@@ -236,9 +356,12 @@ class ChatGPT(BaseClassMixin):
         response: ChatCompletion | ParsedChatCompletion = await self.apply_message(
             messages=messages, **kwargs, response_format=response_format, model=model, **kwargs
         )
-        content: str | BaseModel = response.choices[0].message.content
+
+        content: str | BaseModel
         if is_pydantic_model(response_format):
-            content: BaseModel = response.choices[0].message.parsed
+            content = response.choices[0].message.parsed
+        else:
+            content = response.choices[0].message.content
 
         return content, response.usage
 
@@ -332,28 +455,6 @@ class ChatGPT(BaseClassMixin):
         )
         self.logger.debug("Function calling result: %s", final_response.choices[0].message.content)
         return final_response.choices[0].message.content, final_response.usage
-
-
-class ChatGPTUtils:
-    def __init__(self):
-        self.chatbot = ChatGPT()
-
-    async def ask(self, question: str, model: str) -> tuple[str, CompletionUsage]:
-        answer, token_usage = await self.chatbot.ask(question, model=model)
-        return answer, token_usage
-
-    async def generate_image(self, prompt: str, model: str) -> str:
-        images = await self.chatbot.generate_images(prompt=prompt, model=model)
-        return images[0].url
-
-    async def vision(
-        self,
-        text: str,
-        image_url: str,
-        model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
-    ) -> tuple[str, CompletionUsage]:
-        response, usage = await self.chatbot.vision(text, image_url, model=model)
-        return response, usage
 
 
 class ChatGPTResponseFormatter:

@@ -3,23 +3,16 @@ from typing import Literal
 import discord
 from discord.ext import commands
 
+from cogs import CogsExtension
 from config import OpenAIConfig
 
-from .tasks import ChatGPTTasks
-from .utils import ChatGPTResponseFormatter
+from .utils import ChatGPT, ChatGPTResponseFormatter
 
 
-class ChatGPTCMD(ChatGPTTasks):
+class ChatGPTCMD(CogsExtension):
     @commands.hybrid_group(ephemeral=True)
     async def chatgpt(self, _: commands.Context):
-        """_description_
-        dummy function to create a group command.
-
-        Args:
-        ----
-            ctx (commands.Context): discord context from the command invoker
-
-        """
+        """Command that can let you interact with OpenAI's ChatGPT and DALL-E models."""
 
     @chatgpt.command("ask")
     async def ask(
@@ -27,9 +20,12 @@ class ChatGPTCMD(ChatGPTTasks):
         ctx: commands.Context,
         question: str,
         model: Literal["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"] = OpenAIConfig.CHAT_MODEL,
+        save_history: bool = False,
     ):
         await ctx.interaction.response.defer()
-        answer, usage = await self.utils.ask(question, model=model)
+        gpt = ChatGPT(history_id=str(ctx.author.id), use_db=save_history)
+        await gpt.retrieve_history()
+        answer, usage = await gpt.ask(question, model=model)
         usage_embed = await ChatGPTResponseFormatter.usage(usage)
         return await ctx.interaction.followup.send(answer, embed=usage_embed)
 
@@ -41,8 +37,8 @@ class ChatGPTCMD(ChatGPTTasks):
         model: Literal["dall-e-2", "dall-e-3"] = OpenAIConfig.IMAGE_MODEL,
     ):
         await ctx.interaction.response.defer()
-        image_url = await self.utils.generate_image(prompt, model)
-        return await ctx.interaction.followup.send(image_url)
+        image_urls = await ChatGPT(history_id=str(ctx.author.id)).generate_images(prompt, model)
+        return await ctx.interaction.followup.send(image_urls[0])
 
     @chatgpt.command("vision")
     async def vision(
@@ -50,9 +46,18 @@ class ChatGPTCMD(ChatGPTTasks):
         ctx: commands.Context,
         text: str,
         image: discord.Attachment,
+        save_history: bool = False,
         model: Literal["gpt-4o", "gpt-4o-mini"] = OpenAIConfig.VISION_MODEL,
     ):
         await ctx.interaction.response.defer()
-        vision_response, usage = await self.utils.vision(text, image.url, model=model)
+        gpt = ChatGPT(history_id=str(ctx.author.id), use_db=save_history)
+        await gpt.retrieve_history()
+        vision_response, usage = await gpt.vision(text, image.url, model=model)
         usage_embed = await ChatGPTResponseFormatter.usage(usage)
         return await ctx.interaction.followup.send(vision_response, embed=usage_embed)
+
+    @chatgpt.command("clear")
+    async def clear_history(self, ctx: commands.Context):
+        await ctx.interaction.response.defer()
+        await ChatGPT(history_id=str(ctx.author.id), use_db=True).clear_history()
+        return await ctx.interaction.followup.send("Chat history cleared.")
