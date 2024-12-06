@@ -263,7 +263,7 @@ class Song(SongsValidator):
     purchase: str = ""
     audioPreview: int = Field(ge=MIN_INT, le=MAX_INT)
     audioPreviewEnd: int = Field(ge=MIN_INT, le=MAX_INT)
-    side: Literal[0, 1, 2]
+    side: Literal[0, 1, 2, 3]
     bg: str
     bg_inverse: str | None = None
     bg_daynight: DayNight | None = None
